@@ -22,14 +22,17 @@ public class HashedIndex implements Index {
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
 
-
     /**
      *  Inserts this token in the index.
      */
     public void insert( String token, int docID, int offset ) {
-	//
-	//  YOUR CODE HERE
-	//
+        PostingsList pl = index.get(token);
+        if (pl == null) {
+            pl = new PostingsList();
+        }
+        PostingsEntry pe = new PostingsEntry(docID);
+        pl.insert(pe);
+        index.put(token, pl);
     }
 
 
@@ -49,10 +52,7 @@ public class HashedIndex implements Index {
      *  if the term is not in the index.
      */
     public PostingsList getPostings( String token ) {
-	// 
-	//  REPLACE THE STATEMENT BELOW WITH YOUR CODE
-	//
-	return null;
+       return index.get(token);
     }
 
 
@@ -60,10 +60,13 @@ public class HashedIndex implements Index {
      *  Searches the index for postings matching the query.
      */
     public PostingsList search( Query query, int queryType, int rankingType, int structureType ) {
-	// 
-	//  REPLACE THE STATEMENT BELOW WITH YOUR CODE
-	//
-	return null;
+        String term;
+        if (query.terms.size() > 0) {
+            term = query.terms.getFirst();
+        } else {
+            return null;
+        }
+        return index.get(term);
     }
 
 

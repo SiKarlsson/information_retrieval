@@ -54,7 +54,7 @@ public class SearchGUI extends JFrame {
     Object indexLock = new Object();
 
     /**  Directory from which the code is compiled and run. */
-    public static final String homeDir = "/info/DD2476/ir15/lab";
+    public static final String homeDir = "Documents/skola/ir16/lab";
 
 
     /*

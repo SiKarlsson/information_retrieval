@@ -26,7 +26,7 @@ public class HashedIndex implements Index {
      *  Inserts this token in the index.
      */
     public void insert( String token, int docID, int offset ) {
-        PostingsList pl = index.get(token);
+        PostingsList pl = getPostings(token);
         if (pl == null) {
             pl = new PostingsList();
         }
@@ -60,13 +60,45 @@ public class HashedIndex implements Index {
      *  Searches the index for postings matching the query.
      */
     public PostingsList search( Query query, int queryType, int rankingType, int structureType ) {
-        String term;
         if (query.terms.size() > 0) {
-            term = query.terms.getFirst();
-        } else {
+            String term = query.terms.getFirst();
+            PostingsList intersection = getPostings(term);
+            
+            for (int i = 1; i < query.terms.size(); i++) {
+                String nextTerm = query.terms.get(i);
+                intersection = intersect(intersection, getPostings(nextTerm));
+                if (intersection == null) {
+                    return null;
+                }
+            }
+            return intersection;    
+        } else { 
             return null;
         }
-        return index.get(term);
+    }
+
+    /**
+     *  Intersects two postings lists.
+     */
+    public PostingsList intersect(PostingsList l1, PostingsList l2) {
+        if (l1 == null || l2 == null) {
+            return null;
+        }
+        PostingsList answer = new PostingsList();
+        int p1 = 0;
+        int p2 = 0;
+        while (p1 < l1.size() && p2 < l2.size()) {
+            if (l1.get(p1).docID == l2.get(p2).docID) {
+                PostingsEntry pe = new PostingsEntry(l1.get(p1).docID);
+                answer.insert(pe);
+                p1++; p2++;
+            } else if (l1.get(p1).docID < l2.get(p2).docID) {
+                p1++;
+            } else {
+                p2++;
+            }
+        }
+        return answer;
     }
 
 

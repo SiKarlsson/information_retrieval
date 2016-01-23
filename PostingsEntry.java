@@ -9,14 +9,18 @@
 package ir;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
     
     public int docID;
     public double score;
 
+    private ArrayList<Integer> offsets;
+
     public PostingsEntry(int docID) {
         this.docID = docID;
+        offsets = new ArrayList<Integer>();
     }
 
     /**
@@ -28,6 +32,13 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
      */
     public int compareTo( PostingsEntry other ) {
 	return Double.compare( other.score, score );
+    }
+
+    /**
+     * Add an offset to the entry.
+     */
+    public void addOffset(int offset) {
+        offsets.add(offset);
     }
 
     //

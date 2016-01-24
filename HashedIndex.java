@@ -60,6 +60,18 @@ public class HashedIndex implements Index {
      *  Searches the index for postings matching the query.
      */
     public PostingsList search( Query query, int queryType, int rankingType, int structureType ) {
+        switch (queryType) {
+            case INTERSECTION_QUERY:  return intersect(query);
+            case PHRASE_QUERY:        return intersect(query);
+            case RANKED_QUERY:        return intersect(query);
+            default:                  return null;
+        }
+    }
+
+    /**
+     *  Intersects the terms in a query
+     */
+    public PostingsList intersect(Query query) {
         if (query.terms.size() > 0) {
             String term = query.terms.getFirst();
             PostingsList intersection = getPostings(term);
@@ -74,7 +86,7 @@ public class HashedIndex implements Index {
             return intersection;    
         } else { 
             return null;
-        }
+        }   
     }
 
     /**

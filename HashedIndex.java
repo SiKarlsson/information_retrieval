@@ -12,6 +12,7 @@ package ir;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.ArrayList;
 
 
 /**
@@ -62,7 +63,7 @@ public class HashedIndex implements Index {
     public PostingsList search( Query query, int queryType, int rankingType, int structureType ) {
         switch (queryType) {
             case INTERSECTION_QUERY:  return intersect(query);
-            case PHRASE_QUERY:        return intersect(query);
+            case PHRASE_QUERY:        return phrase(query);
             case RANKED_QUERY:        return intersect(query);
             default:                  return null;
         }
@@ -113,6 +114,71 @@ public class HashedIndex implements Index {
         return answer;
     }
 
+    /**
+     *  Performs a phrase query
+     */
+    public PostingsList phrase(Query query) {
+        if (query.terms.size() > 0) {
+            String term = query.terms.getFirst();
+            PostingsList phrase = getPostings(term);
+
+            for (int i = 1; i < query.terms.size(); i++) {
+                String nextTerm = query.terms.get(i);
+                phrase = phrase(phrase, getPostings(nextTerm));
+                if (phrase == null) {
+                    return null;
+                }
+            }
+            return phrase;
+        } else { 
+            return null;
+        }   
+    }
+
+    /**
+     *  Performs a phrase query between two postingslist
+     */
+    public PostingsList phrase(PostingsList l1, PostingsList l2) {
+        if (l1 == null || l2 == null) {
+            return null;
+        }
+        PostingsList answer = new PostingsList();
+        int p1 = 0;
+        int p2 = 0;
+        while (p1 < l1.size() && p2 < l2.size()) {
+            if (l1.get(p1).docID == l2.get(p2).docID) {
+                if (succeedingIndices(l1.get(p1).getOffsets(), l2.get(p2).getOffsets())) {
+                    PostingsEntry pe = new PostingsEntry(l1.get(p1).docID);
+                    pe.setOffsets(l2.get(p2).getOffsets());
+                    answer.insert(pe);
+                }
+                p1++; p2++;
+            } else if (l1.get(p1).docID < l2.get(p2).docID) {
+                p1++;
+            } else {
+                p2++;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     *  Returns true if the two lists have succeeding indices
+     */
+    public Boolean succeedingIndices(ArrayList<Integer> i1, ArrayList<Integer> i2) {
+        int pp1 = 0;
+        int pp2 = 0;
+        while (pp1 < i1.size() && pp2 < i2.size()) {
+            if (i2.get(pp2) - i1.get(pp1) == 1) {
+                return true;
+            } else if (i2.get(pp2) - i1.get(pp1) > 1) {
+                pp1++;
+            } else {
+                pp2++;
+            }
+        }
+        return false;
+    }
 
     /**
      *  No need for cleanup in a HashedIndex.

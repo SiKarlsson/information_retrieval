@@ -35,6 +35,12 @@ public class Indexer {
     /** The next docID to be generated. */
     private int lastDocID = 0;
 
+    /** The current block identifier. */
+    private int lastBlockID = 0;
+
+    /** The limit to store in the index before writing to file. */
+    private int memoryLimit = 5000;
+
 
     /* ----------------------------------------------- */
 
@@ -148,7 +154,17 @@ public class Indexer {
      *  Indexes one token.
      */
     public void insertIntoIndex( int docID, String token, int offset ) {
-	index.insert( token, docID, offset );
+		if (index.size() > memoryLimit) {
+			transferIndexToDisk();
+		}
+		index.insert( token, docID, offset );
+    }
+
+    /**
+     *  Transfers the current index in working memory to disk.
+     */
+    public void transferIndexToDisk() {
+    	index.transferIndexToDisk(lastBlockID++);
     }
 }
 	

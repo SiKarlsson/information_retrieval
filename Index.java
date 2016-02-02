@@ -40,6 +40,8 @@ public interface Index {
     public PostingsList getPostings( String token );
     public PostingsList search( Query query, int queryType, int rankingType, int structureType );
     public void cleanup();
+    public int size();
+    public void transferIndexToDisk(int blockID);
 
 }
 		    

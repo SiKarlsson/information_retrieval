@@ -181,8 +181,25 @@ public class HashedIndex implements Index {
     }
 
     /**
-     *  No need for cleanup in a HashedIndex.
+     *  Returns the number postings list in the index
+     */
+    public int size() {
+        return index.size();
+    }
+
+    /**
+     *  Moves the entire index to disk and clears it from working memory
+     */
+    public void transferIndexToDisk(int blockID) {
+        IndexWriter iw = new IndexWriter();
+        iw.writeIndexToDisk(index, Integer.toString(blockID));
+        cleanup();
+    }
+
+    /**
+     *  Clears the index
      */
     public void cleanup() {
+        index.clear();
     }
 }

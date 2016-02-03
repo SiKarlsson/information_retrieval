@@ -166,5 +166,13 @@ public class Indexer {
     public void transferIndexToDisk() {
     	index.transferIndexToDisk(lastBlockID++);
     }
+
+    /**
+     *  Merges all separate index files built up in the indexing into one.
+     */
+    public void mergeIndexFiles() {
+    	IndexWriter iw = new IndexWriter();
+    	iw.mergeIndexFiles(lastBlockID);
+    }
 }
 	

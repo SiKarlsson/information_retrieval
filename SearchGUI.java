@@ -348,6 +348,7 @@ public class SearchGUI extends JFrame {
 		indexer.processFiles( dokDir );
 	    }
 	    indexer.transferIndexToDisk();
+	    indexer.mergeIndexFiles();
 	    resultWindow.setText( "\n  Done!" );
 	}
     };

@@ -23,18 +23,7 @@ import java.util.HashMap;
  *   Writes an inverted index to file
  */
 public class IndexWriter {
-
-    /** The directory to write the index to. */
-    private static final String writeDir = "/Users/simon/Documents/skola/ir16/lab/index/";
-    /** The name of the temporary files used when indexing. */
-    private static final String tempFileName = "tmp_";
-    /** The name of the merge files used when merging the temporary files. */
-    private static final String mergeFileName = "mrg_";
-    /** The name of the main inverted index on file. */
-    private static final String postingsFileName = "pl";
-    /** The name of the index indexing the inverted index. */
-    private static final String indexFileName = "pl_index";
-
+    
     /**
      *  Writes the index to given file
      */
@@ -46,8 +35,14 @@ public class IndexWriter {
      *  Merges all the temporary index files into one.
      */
     public void mergeIndexFiles(int n) {
-        for (int i = 1; i < n; i++) {
-            mergeFile(i);
+        if (n > 1) {
+            for (int i = 1; i < n; i++) {
+                mergeFile(i);
+            }
+        } else {
+            File oldfile = new File(Constants.tempFileName("0"));
+            File newfile = new File(Constants.mergeFileName("0"));
+            oldfile.renameTo(newfile);
         }
         cleanupFiles(n);
         createIndex();
@@ -67,7 +62,7 @@ public class IndexWriter {
      */
     private void writePostingsList(ArrayList<String> terms, HashMap<String,PostingsList> index, String fileName) {
         try {
-            String filename = writeDir + tempFileName + fileName +".txt";
+            String filename = Constants.tempFileName(fileName);
             FileWriter fw = new FileWriter(filename, true);
             for (int t = 0; t < terms.size(); t++) {
                 String term = terms.get(t);
@@ -75,7 +70,7 @@ public class IndexWriter {
                 PostingsList pl = index.get(term);
                 for (int i = 0; i < pl.size(); i++) {
                     PostingsEntry pe = pl.get(i);
-                    fw.write(" " + pe.docID + ":");
+                    fw.write(" " + pe.docID + ",");
                     ArrayList offsets = pe.getOffsets();
                     for (int j = 0; j < offsets.size(); j++) {
                         fw.write(offsets.get(j).toString());
@@ -100,16 +95,14 @@ public class IndexWriter {
     private void mergeFile(int file) {
         String baseFilename;
         if (file == 1) {
-            baseFilename = writeDir + tempFileName + "0.txt";
+            baseFilename = Constants.tempFileName("0");
         } else {
-            baseFilename = writeDir + mergeFileName + (file - 1) + ".txt";
+            baseFilename = Constants.mergeFileName(Integer.toString(file - 1));
         }
-        String filename = writeDir + tempFileName + file + ".txt";
-        String targetFilename = writeDir + mergeFileName + (file) + ".txt";
         try {
-            FileWriter fw = new FileWriter(targetFilename);
+            FileWriter fw = new FileWriter(Constants.mergeFileName(Integer.toString(file)));
             BufferedReader br1 = new BufferedReader(new FileReader(baseFilename));
-            BufferedReader br2 = new BufferedReader(new FileReader(filename));
+            BufferedReader br2 = new BufferedReader(new FileReader(Constants.tempFileName(Integer.toString(file))));
             String[] line1 = readTerm(br1.readLine());
             String[] line2 = readTerm(br2.readLine());
             while (line1 != null || line2 != null) {
@@ -180,14 +173,14 @@ public class IndexWriter {
     private void cleanupFiles(int numFiles) {
         try {
             for (int i = 0; i < numFiles; i++) {
-                File file1 = new File(writeDir + tempFileName + i + ".txt");
+                File file1 = new File(Constants.tempFileName(Integer.toString(i)));
                 file1.delete();
                 if (i != numFiles - 1) {
-                    File file2 = new File(writeDir + mergeFileName + (i) + ".txt");
+                    File file2 = new File(Constants.mergeFileName(Integer.toString(i)));
                     file2.delete();
                 } else {
-                    File oldfile = new File(writeDir + mergeFileName + (i) + ".txt");
-                    File newfile = new File(writeDir + postingsFileName + ".txt");
+                    File oldfile = new File(Constants.mergeFileName(Integer.toString(i)));
+                    File newfile = new File(Constants.postingsFileName());
                     oldfile.renameTo(newfile);
                 }
             }
@@ -202,8 +195,8 @@ public class IndexWriter {
     private void createIndex() {
         try {
             String line;
-            RandomAccessFile raf = new RandomAccessFile(writeDir + postingsFileName + ".txt", "r" );
-            FileWriter fw = new FileWriter(writeDir + indexFileName + ".txt");
+            RandomAccessFile raf = new RandomAccessFile(Constants.postingsFileName(), "r" );
+            FileWriter fw = new FileWriter(Constants.indexFileName());
             long offset = raf.getFilePointer();
             line = raf.readLine();
             line = new String(line.getBytes("ISO-8859-1"), "UTF-8");

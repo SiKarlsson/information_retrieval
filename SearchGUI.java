@@ -342,13 +342,15 @@ public class SearchGUI extends JFrame {
      */
     private void index() {
 	synchronized ( indexLock ) {
-	    resultWindow.setText( "\n  Indexing, please wait..." );
-	    for ( int i=0; i<dirNames.size(); i++ ) {
-		File dokDir = new File( dirNames.get( i ));
-		indexer.processFiles( dokDir );
+	    if (indexer.needIndexing()) {
+		    resultWindow.setText( "\n  Indexing, please wait..." );
+		    for ( int i=0; i<dirNames.size(); i++ ) {
+			File dokDir = new File( dirNames.get( i ));
+			indexer.processFiles( dokDir );
+		    }
+		    indexer.transferIndexToDisk();
+		    indexer.mergeIndexFiles();
 	    }
-	    indexer.transferIndexToDisk();
-	    indexer.mergeIndexFiles();
 	    resultWindow.setText( "\n  Done!" );
 	}
     };

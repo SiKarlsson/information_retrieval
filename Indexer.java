@@ -39,7 +39,7 @@ public class Indexer {
     private int lastBlockID = 0;
 
     /** The limit to store in the index before writing to file. */
-    private int memoryLimit = 5000;
+    private int memoryLimit = 10000;
 
 
     /* ----------------------------------------------- */
@@ -173,6 +173,16 @@ public class Indexer {
     public void mergeIndexFiles() {
     	IndexWriter iw = new IndexWriter();
     	iw.mergeIndexFiles(lastBlockID);
+    }
+
+    public boolean needIndexing() {
+    	File index = new File(Constants.indexFileName());
+    	File invertedIndex = new File(Constants.postingsFileName());
+		if (index.exists() && !index.isDirectory() && invertedIndex.exists() && !invertedIndex.isDirectory()) { 
+    		return false;	
+		} else {
+			return true;
+		}
     }
 }
 	

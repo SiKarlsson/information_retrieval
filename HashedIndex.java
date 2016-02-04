@@ -27,7 +27,7 @@ public class HashedIndex implements Index {
      *  Inserts this token in the index.
      */
     public void insert( String token, int docID, int offset ) {
-        PostingsList pl = getPostings(token);
+        PostingsList pl = index.get(token);
         if (pl == null) {
             pl = new PostingsList();
         }
@@ -53,7 +53,8 @@ public class HashedIndex implements Index {
      *  if the term is not in the index.
      */
     public PostingsList getPostings( String token ) {
-       return index.get(token);
+       IndexReader ir = new IndexReader();
+       return ir.readPostingsListFromFile(token);
     }
 
 

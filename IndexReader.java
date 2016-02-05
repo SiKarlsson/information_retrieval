@@ -14,13 +14,18 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
- *   Reads the index on file
+ *   Reads the index on file.
  */
 public class IndexReader {
+
+    private  static final int linearSearchThreshold = 1024;
     
+    /**
+     *  Reads the postings list on disk for the term.
+     */
     public PostingsList readPostingsListFromFile(String term) {
         try {
-            RandomAccessFile raf = new RandomAccessFile(Constants.postingsFileName(), "r" );
+            RandomAccessFile raf = new RandomAccessFile(Constants.postingsFileName(), "r");
             String postingsListString = null;
             long offset = postingsListOffset(term);
             if (offset != -1) {
@@ -35,23 +40,103 @@ public class IndexReader {
         }
     }
 
+    /**
+     *  Returns the offset in the inverted index for the given term.
+     */
     private long postingsListOffset(String term) {
         try {
-            BufferedReader br = new BufferedReader(new FileReader(Constants.indexFileName()));
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] s = line.split(" ");
-                if (term.equals(s[0])) {
-                    return Long.parseLong(s[1]);
-                }
-            }
-            br.close();
+            RandomAccessFile raf = new RandomAccessFile(Constants.indexFileName(), "r" );
+            long offset = search(term, -1, raf.length()-1, raf);
+            raf.close();
+            return offset;
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
         return -1;
     }
 
+    /**
+     *  Performs a binary search on the index file.
+     */
+    private long search(String element, long low, long high, RandomAccessFile raf) throws IOException {
+        if (high - low < linearSearchThreshold) {
+            return linearSearch(element, low-Constants.maxLineSize, high, raf);
+        } else {
+            long m = low + ((high - low) / 2);
+            String s = nextLine(m, raf);
+            if (s == null) {
+                return -1;
+            }
+            String[] line = s.split(" ");
+            if (line[0].compareTo(element) < 0) {
+                return search(element, m, high, raf);
+            } else if (line[0].compareTo(element) > 0) {
+                return search(element, low, m, raf);
+            } else {
+                return Long.parseLong(line[1].trim());
+            }
+        }
+    }
+
+    /**
+     *  Performs a linear search on the index file between given boundaries.
+     */
+    private long linearSearch(String element, long low, long high, RandomAccessFile raf) throws IOException {
+        long position = low;
+        while (position < high) {
+            String s = nextLine(position, raf);
+            if (s == null) {
+                return -1;
+            }
+            String[] line = s.split(" ");
+            if (line[0].equals(element)) {
+                return Long.parseLong(line[1].trim());
+            } else if (line[0].compareTo(element) > 0) {
+                return -1;
+            } else {
+                position += s.length();
+            }
+        }
+        return -1;
+    }
+
+    /**
+     *  Returns the next line of the random access file.
+     */
+    private String nextLine(long low, RandomAccessFile raf) throws IOException {
+        if (low < 0) {
+            raf.seek(0);
+        } else {
+            raf.seek(low);
+        }
+        byte[] buffer = new byte[Constants.maxLineSize];
+        int r = raf.read(buffer);
+        int lineBeginIndex = -1;
+        if (low < 0) {
+            lineBeginIndex = 0;
+        } else {
+            for (int i = 0; i < 1024; i++) {
+                if (buffer[i] == '\n') {
+                    lineBeginIndex = i + 1;
+                    break;
+                }
+            }
+        }
+        if (lineBeginIndex == -1) {
+            return null;
+        }
+        int start = lineBeginIndex;
+        for (int i = start; i < r; i++) {
+            if (buffer[i] == '\n') {
+                return new String(buffer, lineBeginIndex, i - lineBeginIndex + 1);
+            }
+        }
+        return null;
+    }
+
+    /**
+     *  Parses the string representing a postings list and creates a object of it.
+     */
     private PostingsList createPostingsList(String postingsListString) {
         if (postingsListString == null) {
             return null;

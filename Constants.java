@@ -20,6 +20,8 @@ public class Constants {
     private static final String indexFileName = "i";
     /** Standard extension of text files **/
     private static final String textFileExtension = "txt";
+    /** The maximum line size in the small index (Kb) **/
+    public static final int maxLineSize = 65 * 1024;
 
     public static final String postingsFileName() {
         return writeDir + postingsFileName + "." + textFileExtension;

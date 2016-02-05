@@ -39,7 +39,7 @@ public class Indexer {
     private int lastBlockID = 0;
 
     /** The limit to store in the index before writing to file. */
-    private int memoryLimit = 10000;
+    private int memoryLimit = 70371;
 
 
     /* ----------------------------------------------- */

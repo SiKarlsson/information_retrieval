@@ -193,7 +193,7 @@ public class HashedIndex implements Index {
      */
     public void transferIndexToDisk(int blockID) {
         IndexWriter iw = new IndexWriter();
-        iw.writeIndexToDisk(index, Integer.toString(blockID));
+        iw.writeIndexToDisk(index, Integer.toString(blockID), docIDs);
         cleanup();
     }
 
@@ -202,5 +202,6 @@ public class HashedIndex implements Index {
      */
     public void cleanup() {
         index.clear();
+        docIDs.clear();
     }
 }

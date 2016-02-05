@@ -27,8 +27,9 @@ public class IndexWriter {
     /**
      *  Writes the index to given file
      */
-    public void writeIndexToDisk(HashMap<String,PostingsList> index, String fileName) {
+    public void writeIndexToDisk(HashMap<String,PostingsList> index, String fileName, HashMap<String,String> docIDs) {
         writePostingsList(sortIndex(index), index, fileName);
+        writeDocIDs(docIDs);
     }
 
     /**
@@ -87,6 +88,23 @@ public class IndexWriter {
         } catch(IOException ioe) {
             System.err.println("IOException: " + ioe.getMessage());
         }
+    }
+
+    /**
+     *  Writes the docID-path pairs to disk.
+     */
+    private void writeDocIDs(HashMap<String,String> map) {
+        try {
+            String filename = Constants.idFileName();
+            FileWriter fw = new FileWriter(filename, true);
+            for (int i = Constants.latestID; map.get("" + i) != null; i++) {
+                fw.write(i + " " + map.get("" + i) + '\n');
+                Constants.latestID++;
+            }
+            fw.close();
+        } catch(IOException ioe) {
+            System.err.println("IOException: " + ioe.getMessage());
+        }   
     }
 
     /**

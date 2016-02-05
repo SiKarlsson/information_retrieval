@@ -97,9 +97,9 @@ public class IndexWriter {
         try {
             String filename = Constants.idFileName();
             FileWriter fw = new FileWriter(filename, true);
-            for (int i = Constants.latestID; map.get("" + i) != null; i++) {
+            for (int i = Constants.nextID; map.get("" + i) != null; i++) {
                 fw.write(i + " " + map.get("" + i) + '\n');
-                Constants.latestID++;
+                Constants.nextID++;
             }
             fw.close();
         } catch(IOException ioe) {

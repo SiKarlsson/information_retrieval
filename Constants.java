@@ -25,7 +25,7 @@ public class Constants {
     /** The maximum line size in the small index (Kb) **/
     public static final int maxLineSize = 65 * 1024;
     /** The lates docID-path pair written to file **/
-    public static int latestID = 0;
+    public static int nextID = 0;
 
     public static final String postingsFileName() {
         return writeDir + postingsFileName + "." + textFileExtension;

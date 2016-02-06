@@ -204,4 +204,9 @@ public class HashedIndex implements Index {
         index.clear();
         docIDs.clear();
     }
+
+    public String getFilePath(String id) {
+        IndexReader ir = new IndexReader();
+        return ir.readFilePath(id);
+    }
 }

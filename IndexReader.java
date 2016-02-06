@@ -40,6 +40,18 @@ public class IndexReader {
         }
     }
 
+    public String readFilePath(String id) {
+        try {
+            RandomAccessFile raf = new RandomAccessFile(Constants.idFileName(), "r" );
+            String path = searchPath(Integer.parseInt(id), -1, raf.length()-1, raf);
+            raf.close();
+            return path;
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      *  Returns the offset in the inverted index for the given term.
      */
@@ -98,6 +110,51 @@ public class IndexReader {
             }
         }
         return -1;
+    }
+
+    /**
+     *  Performs a binary search on the index file.
+     */
+    private String searchPath(int element, long low, long high, RandomAccessFile raf) throws IOException {
+        if (high - low < linearSearchThreshold) {
+            return linearSearchPath(element, low-Constants.maxLineSize, high, raf);
+        } else {
+            long m = low + ((high - low) / 2);
+            String s = nextLine(m, raf);
+            if (s == null) {
+                return null;
+            }
+            String[] line = s.split(" ");
+            if (Integer.parseInt(line[0]) < element) {
+                return searchPath(element, m, high, raf);
+            } else if (Integer.parseInt(line[0]) > element) {
+                return searchPath(element, low, m, raf);
+            } else {
+                return line[1].trim();
+            }
+        }
+    }
+
+    /**
+     *  Performs a linear search on the index file between given boundaries.
+     */
+    private String linearSearchPath(int element, long low, long high, RandomAccessFile raf) throws IOException {
+        long position = low;
+        while (position < high) {
+            String s = nextLine(position, raf);
+            if (s == null) {
+                return null;
+            }
+            String[] line = s.split(" ");
+            if (Integer.parseInt(line[0]) == element) {
+                return line[1].trim();
+            } else if (Integer.parseInt(line[0]) > element) {
+                return null;
+            } else {
+                position += s.length();
+            }
+        }
+        return null;
     }
 
     /**

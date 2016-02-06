@@ -181,7 +181,7 @@ public class SearchGUI extends JFrame {
 			buf.append( "\nFound " + results.size() + " matching document(s)\n\n" );
 			for ( int i=0; i<results.size(); i++ ) {
 			    buf.append( " " + i + ". " );
-			    String filename = indexer.index.docIDs.get( "" + results.get(i).docID );
+			    String filename = indexer.index.getFilePath( "" + results.get(i).docID );
 			    if ( filename == null ) {
 				buf.append( "" + results.get(i).docID );
 			    }
@@ -229,7 +229,7 @@ public class SearchGUI extends JFrame {
 			buf.append( "\nFound " + results.size() + " matching document(s)\n\n" );
 			for ( int i=0; i<results.size(); i++ ) {
 			    buf.append( " " + i + ". " );
-			    String filename = indexer.index.docIDs.get( "" + results.get(i).docID );
+			    String filename = indexer.index.getFilePath( "" + results.get(i).docID );
 			    if ( filename == null ) {
 				buf.append( "" + results.get(i).docID );
 			    }

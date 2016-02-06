@@ -42,6 +42,7 @@ public interface Index {
     public void cleanup();
     public int size();
     public void transferIndexToDisk(int blockID);
+    public String getFilePath(String id);
 
 }
 		    

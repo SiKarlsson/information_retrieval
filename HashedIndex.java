@@ -61,7 +61,6 @@ public class HashedIndex implements Index {
     public PostingsList getPostings( String token ) {
         PostingsList pl = index.get(token);
         if (pl == null) {
-            System.out.println("LOOKING FOR: " + token + " in disk");
             IndexReader ir = new IndexReader();
             pl = ir.readPostingsListFromFile(token);
             if (pl != null) {
@@ -71,14 +70,7 @@ public class HashedIndex implements Index {
                 index.put(token, pl);
                 cache.add(token);
             }
-        } else {
-            System.out.println("FOUND " + token + " in cache.");
         }
-        System.out.println("---- CACHE ----");
-        for (String elem : cache) {
-            System.out.println(elem);
-        }
-        System.out.println("------------");
         return pl;
     }
 

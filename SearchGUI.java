@@ -351,6 +351,8 @@ public class SearchGUI extends JFrame {
 		    indexer.transferIndexToDisk();
 		    indexer.mergeIndexFiles();
 	    }
+	    resultWindow.setText( "\n  Loading..." );
+	    indexer.prepareFilePaths();
 	    resultWindow.setText( "\n  Done!" );
 	}
     };

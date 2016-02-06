@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashMap;
 
 /**
  *   Reads the index on file.
@@ -209,6 +210,29 @@ public class IndexReader {
             pl.insert(pe);
         }
         return pl;
+    }
+
+    public HashMap<String, String> prepareFilePaths() {
+        BufferedReader br = null;
+        HashMap<String, String> map = new HashMap<String, String>();
+        try {
+            br = new BufferedReader(new FileReader(Constants.idFileName()));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] s = line.split(" ");
+                map.put(s[0], s[1]);
+            }
+            return map;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }   
     }
 
 }

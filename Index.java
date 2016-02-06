@@ -32,7 +32,6 @@ public interface Index {
     public static final int BIGRAM = 1; 
     public static final int SUBPHRASE = 2; 
 	
-    public HashMap<String, String> docIDs = new HashMap<String,String>();
     public HashMap<String,Integer> docLengths = new HashMap<String,Integer>();
 
     public void insert( String token, int docID, int offset );
@@ -43,6 +42,8 @@ public interface Index {
     public int size();
     public void transferIndexToDisk(int blockID);
     public String getFilePath(String id);
+    public void addFilePath(String key, String value);
+    public void setFilePaths(HashMap<String, String> map);
 
 }
 		    

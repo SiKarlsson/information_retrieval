@@ -22,6 +22,8 @@ public class HashedIndex implements Index {
 
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+    private HashMap<String, String> docIDs = new HashMap<String,String>();
+
 
     /**
      *  Inserts this token in the index.
@@ -53,8 +55,15 @@ public class HashedIndex implements Index {
      *  if the term is not in the index.
      */
     public PostingsList getPostings( String token ) {
-       IndexReader ir = new IndexReader();
-       return ir.readPostingsListFromFile(token);
+        PostingsList pl = index.get(token);
+        if (pl == null) {
+            IndexReader ir = new IndexReader();
+            pl = ir.readPostingsListFromFile(token);
+            if (pl != null) {
+                index.put(token, pl);
+            }
+        }
+        return pl;
     }
 
 
@@ -206,7 +215,22 @@ public class HashedIndex implements Index {
     }
 
     public String getFilePath(String id) {
-        IndexReader ir = new IndexReader();
-        return ir.readFilePath(id);
+        String path = docIDs.get(id);
+        if (path == null) {
+            IndexReader ir = new IndexReader();
+            path = ir.readFilePath(id);
+            if (path != null) {
+                docIDs.put(id, path);
+            }
+        } 
+        return path;
+    }
+
+    public void addFilePath(String key, String value) {
+        docIDs.put(key, value);
+    }
+
+    public void setFilePaths(HashMap<String, String> map) {
+        docIDs = map;
     }
 }

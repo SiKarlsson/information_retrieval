@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.pdfparser.*;
@@ -89,7 +90,7 @@ public class Indexer {
 		//System.err.println( "Indexing " + f.getPath() );
 		// First register the document and get a docID
 		int docID = generateDocID();
-		index.docIDs.put( "" + docID, f.getPath() );
+		index.addFilePath( "" + docID, f.getPath() );
 		try {
 		    //  Read the first few bytes of the file to see if it is 
 		    // likely to be a PDF 
@@ -183,6 +184,14 @@ public class Indexer {
 		} else {
 			return true;
 		}
+    }
+
+    public void prepareFilePaths() {
+    	IndexReader ir = new IndexReader();
+    	HashMap<String, String> map = ir.prepareFilePaths();
+    	if (map != null) {
+    		index.setFilePaths(map);
+    	}
     }
 }
 	

@@ -26,6 +26,8 @@ public class Constants {
     public static final int maxLineSize = 65 * 1024;
     /** The lates docID-path pair written to file **/
     public static int nextID = 0;
+    /** The cache size of the postings list cache **/
+    public static final int cacheMaxSize = 4;
 
     public static final String postingsFileName() {
         return writeDir + postingsFileName + "." + textFileExtension;

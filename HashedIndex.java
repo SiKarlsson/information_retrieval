@@ -10,9 +10,12 @@
 
 package ir;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
+
 
 
 /**
@@ -23,6 +26,7 @@ public class HashedIndex implements Index {
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
     private HashMap<String, String> docIDs = new HashMap<String,String>();
+    private Queue<String> cache = new LinkedList<String>();
 
 
     /**
@@ -57,12 +61,24 @@ public class HashedIndex implements Index {
     public PostingsList getPostings( String token ) {
         PostingsList pl = index.get(token);
         if (pl == null) {
+            System.out.println("LOOKING FOR: " + token + " in disk");
             IndexReader ir = new IndexReader();
             pl = ir.readPostingsListFromFile(token);
             if (pl != null) {
+                if (index.size() > Constants.cacheMaxSize) {
+                    index.remove(cache.poll());
+                }
                 index.put(token, pl);
+                cache.add(token);
             }
+        } else {
+            System.out.println("FOUND " + token + " in cache.");
         }
+        System.out.println("---- CACHE ----");
+        for (String elem : cache) {
+            System.out.println(elem);
+        }
+        System.out.println("------------");
         return pl;
     }
 

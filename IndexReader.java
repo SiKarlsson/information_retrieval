@@ -218,7 +218,7 @@ public class IndexReader {
         try {
             br = new BufferedReader(new FileReader(Constants.idFileName()));
             String line;
-            while ((line = br.readLine()) != null && map.size() < Constants.pathCacheMaxSize) {
+            while ((line = br.readLine()) != null && map.size() <= Constants.pathCacheMaxSize) {
                 String[] s = line.split(" ");
                 map.put(s[0], s[1]);
             }

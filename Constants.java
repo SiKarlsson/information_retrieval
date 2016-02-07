@@ -28,6 +28,8 @@ public class Constants {
     public static int nextID = 0;
     /** The cache size of the postings list cache **/
     public static final int cacheMaxSize = 4;
+    /** The max size of the path cache **/
+    public static final int pathCacheMaxSize = 10;
 
     public static final String postingsFileName() {
         return writeDir + postingsFileName + "." + textFileExtension;

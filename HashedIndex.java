@@ -27,6 +27,7 @@ public class HashedIndex implements Index {
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
     private HashMap<String, String> docIDs = new HashMap<String,String>();
     private Queue<String> cache = new LinkedList<String>();
+    private Queue<String> pathCache = new LinkedList<String>();
 
 
     /**
@@ -64,7 +65,7 @@ public class HashedIndex implements Index {
             IndexReader ir = new IndexReader();
             pl = ir.readPostingsListFromFile(token);
             if (pl != null) {
-                if (index.size() > Constants.cacheMaxSize) {
+                if (index.size() >= Constants.cacheMaxSize) {
                     index.remove(cache.poll());
                 }
                 index.put(token, pl);
@@ -228,9 +229,13 @@ public class HashedIndex implements Index {
             IndexReader ir = new IndexReader();
             path = ir.readFilePath(id);
             if (path != null) {
+                if (docIDs.size() >= Constants.pathCacheMaxSize) {
+                    docIDs.remove(pathCache.poll());
+                }
                 docIDs.put(id, path);
+                pathCache.add(id);
             }
-        } 
+        }
         return path;
     }
 
@@ -239,6 +244,9 @@ public class HashedIndex implements Index {
     }
 
     public void setFilePaths(HashMap<String, String> map) {
+        for (String key : map.keySet()) {
+            pathCache.add(key);
+        }
         docIDs = map;
     }
 }

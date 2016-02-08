@@ -61,7 +61,7 @@ public class HashedIndex implements Index {
      */
     public PostingsList getPostings( String token ) {
         PostingsList pl = index.get(token);
-        if (pl == null) {
+        if (pl == null && !Constants.keepInMemory) {
             IndexReader ir = new IndexReader();
             pl = ir.readPostingsListFromFile(token);
             if (pl != null) {

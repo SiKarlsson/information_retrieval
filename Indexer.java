@@ -155,7 +155,7 @@ public class Indexer {
      *  Indexes one token.
      */
     public void insertIntoIndex( int docID, String token, int offset ) {
-		if (index.size() > memoryLimit) {
+		if (index.size() > memoryLimit && !Constants.keepInMemory) {
 			transferIndexToDisk();
 		}
 		index.insert( token, docID, offset );

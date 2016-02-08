@@ -30,6 +30,8 @@ public class Constants {
     public static final int cacheMaxSize = 10000000;
     /** The max size of the path cache **/
     public static final int pathCacheMaxSize = 100000;
+    /** Keep in memory **/
+    public static boolean keepInMemory = false;
 
     public static final String postingsFileName() {
         return writeDir + postingsFileName + "." + textFileExtension;

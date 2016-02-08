@@ -166,9 +166,10 @@ public class HashedIndex implements Index {
         int p2 = 0;
         while (p1 < l1.size() && p2 < l2.size()) {
             if (l1.get(p1).docID == l2.get(p2).docID) {
-                if (succeedingIndices(l1.get(p1).getOffsets(), l2.get(p2).getOffsets())) {
+                ArrayList<Integer> matchingOffsets = succeedingIndices(l1.get(p1).getOffsets(), l2.get(p2).getOffsets());
+                if (matchingOffsets.size() > 0) {
                     PostingsEntry pe = new PostingsEntry(l1.get(p1).docID);
-                    pe.setOffsets(l2.get(p2).getOffsets());
+                    pe.setOffsets(matchingOffsets);
                     answer.insert(pe);
                 }
                 p1++; p2++;
@@ -184,19 +185,21 @@ public class HashedIndex implements Index {
     /**
      *  Returns true if the two lists have succeeding indices
      */
-    public Boolean succeedingIndices(ArrayList<Integer> i1, ArrayList<Integer> i2) {
+    public ArrayList<Integer> succeedingIndices(ArrayList<Integer> i1, ArrayList<Integer> i2) {
+        ArrayList<Integer> offsets = new ArrayList<Integer>();
         int pp1 = 0;
         int pp2 = 0;
         while (pp1 < i1.size() && pp2 < i2.size()) {
             if (i2.get(pp2) - i1.get(pp1) == 1) {
-                return true;
+                offsets.add(i2.get(pp2));
+                pp1++; pp2++;
             } else if (i2.get(pp2) - i1.get(pp1) > 1) {
                 pp1++;
             } else {
                 pp2++;
             }
         }
-        return false;
+        return offsets;
     }
 
     /**

@@ -17,6 +17,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.pdfparser.*;
@@ -34,6 +35,12 @@ public class Indexer {
     
     /** The next docID to be generated. */
     private int lastDocID = 0;
+
+    /** The current block identifier. */
+    private int lastBlockID = 0;
+
+    /** The limit to store in the index before writing to file. */
+    private int memoryLimit = 70371;
 
 
     /* ----------------------------------------------- */
@@ -83,7 +90,7 @@ public class Indexer {
 		//System.err.println( "Indexing " + f.getPath() );
 		// First register the document and get a docID
 		int docID = generateDocID();
-		index.docIDs.put( "" + docID, f.getPath() );
+		index.addFilePath( "" + docID, f.getPath() );
 		try {
 		    //  Read the first few bytes of the file to see if it is 
 		    // likely to be a PDF 
@@ -148,7 +155,43 @@ public class Indexer {
      *  Indexes one token.
      */
     public void insertIntoIndex( int docID, String token, int offset ) {
-	index.insert( token, docID, offset );
+		if (index.size() > memoryLimit && !Constants.keepInMemory) {
+			transferIndexToDisk();
+		}
+		index.insert( token, docID, offset );
+    }
+
+    /**
+     *  Transfers the current index in working memory to disk.
+     */
+    public void transferIndexToDisk() {
+    	index.transferIndexToDisk(lastBlockID++);
+    }
+
+    /**
+     *  Merges all separate index files built up in the indexing into one.
+     */
+    public void mergeIndexFiles() {
+    	IndexWriter iw = new IndexWriter();
+    	iw.mergeIndexFiles(lastBlockID);
+    }
+
+    public boolean needIndexing() {
+    	File index = new File(Constants.indexFileName());
+    	File invertedIndex = new File(Constants.postingsFileName());
+		if (index.exists() && !index.isDirectory() && invertedIndex.exists() && !invertedIndex.isDirectory()) { 
+    		return false;	
+		} else {
+			return true;
+		}
+    }
+
+    public void prepareFilePaths() {
+    	IndexReader ir = new IndexReader();
+    	HashMap<String, String> map = ir.prepareFilePaths();
+    	if (map != null) {
+    		index.setFilePaths(map);
+    	}
     }
 }
 	

@@ -30,6 +30,27 @@ public class PostingsList implements Serializable {
 	return list.get( i );
     }
 
+    public void insert(PostingsEntry pe) {
+        if (!duplicate(pe)) {
+            list.addLast(pe);
+        }
+    }
+
+    public void insert(PostingsEntry pe, int offset) {
+        insert(pe);
+        list.get(list.size() - 1).addOffset(offset);
+    }
+
+    private Boolean duplicate(PostingsEntry pe) {
+        if (list.size() > 0) {
+            PostingsEntry last = list.getLast();
+            if (last.docID == pe.docID) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //
     //  YOUR CODE HERE
     //

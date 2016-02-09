@@ -181,7 +181,7 @@ public class SearchGUI extends JFrame {
 			buf.append( "\nFound " + results.size() + " matching document(s)\n\n" );
 			for ( int i=0; i<results.size(); i++ ) {
 			    buf.append( " " + i + ". " );
-			    String filename = indexer.index.docIDs.get( "" + results.get(i).docID );
+			    String filename = indexer.index.getFilePath( "" + results.get(i).docID );
 			    if ( filename == null ) {
 				buf.append( "" + results.get(i).docID );
 			    }
@@ -229,7 +229,7 @@ public class SearchGUI extends JFrame {
 			buf.append( "\nFound " + results.size() + " matching document(s)\n\n" );
 			for ( int i=0; i<results.size(); i++ ) {
 			    buf.append( " " + i + ". " );
-			    String filename = indexer.index.docIDs.get( "" + results.get(i).docID );
+			    String filename = indexer.index.getFilePath( "" + results.get(i).docID );
 			    if ( filename == null ) {
 				buf.append( "" + results.get(i).docID );
 			    }
@@ -342,10 +342,20 @@ public class SearchGUI extends JFrame {
      */
     private void index() {
 	synchronized ( indexLock ) {
-	    resultWindow.setText( "\n  Indexing, please wait..." );
-	    for ( int i=0; i<dirNames.size(); i++ ) {
-		File dokDir = new File( dirNames.get( i ));
-		indexer.processFiles( dokDir );
+	    if (indexer.needIndexing() || Constants.keepInMemory) {
+		    resultWindow.setText( "\n  Indexing, please wait..." );
+		    for ( int i=0; i<dirNames.size(); i++ ) {
+			File dokDir = new File( dirNames.get( i ));
+			indexer.processFiles( dokDir );
+		    }
+		    if (!Constants.keepInMemory) {
+		    	indexer.transferIndexToDisk();
+		    	indexer.mergeIndexFiles();
+		    }
+	    }
+	    if (!Constants.keepInMemory) {
+	    	resultWindow.setText( "\n  Loading..." );
+	    	indexer.prepareFilePaths();
 	    }
 	    resultWindow.setText( "\n  Done!" );
 	}

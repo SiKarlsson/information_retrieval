@@ -10,9 +10,12 @@
 
 package ir;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
+
 
 
 /**
@@ -22,12 +25,16 @@ public class HashedIndex implements Index {
 
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+    private HashMap<String, String> docIDs = new HashMap<String,String>();
+    private Queue<String> cache = new LinkedList<String>();
+    private Queue<String> pathCache = new LinkedList<String>();
+
 
     /**
      *  Inserts this token in the index.
      */
     public void insert( String token, int docID, int offset ) {
-        PostingsList pl = getPostings(token);
+        PostingsList pl = index.get(token);
         if (pl == null) {
             pl = new PostingsList();
         }
@@ -53,7 +60,19 @@ public class HashedIndex implements Index {
      *  if the term is not in the index.
      */
     public PostingsList getPostings( String token ) {
-       return index.get(token);
+        PostingsList pl = index.get(token);
+        if (pl == null && !Constants.keepInMemory) {
+            IndexReader ir = new IndexReader();
+            pl = ir.readPostingsListFromFile(token);
+            if (pl != null) {
+                if (index.size() >= Constants.cacheMaxSize) {
+                    index.remove(cache.poll());
+                }
+                index.put(token, pl);
+                cache.add(token);
+            }
+        }
+        return pl;
     }
 
 
@@ -147,9 +166,10 @@ public class HashedIndex implements Index {
         int p2 = 0;
         while (p1 < l1.size() && p2 < l2.size()) {
             if (l1.get(p1).docID == l2.get(p2).docID) {
-                if (succeedingIndices(l1.get(p1).getOffsets(), l2.get(p2).getOffsets())) {
+                ArrayList<Integer> matchingOffsets = succeedingIndices(l1.get(p1).getOffsets(), l2.get(p2).getOffsets());
+                if (matchingOffsets.size() > 0) {
                     PostingsEntry pe = new PostingsEntry(l1.get(p1).docID);
-                    pe.setOffsets(l2.get(p2).getOffsets());
+                    pe.setOffsets(matchingOffsets);
                     answer.insert(pe);
                 }
                 p1++; p2++;
@@ -165,24 +185,71 @@ public class HashedIndex implements Index {
     /**
      *  Returns true if the two lists have succeeding indices
      */
-    public Boolean succeedingIndices(ArrayList<Integer> i1, ArrayList<Integer> i2) {
+    public ArrayList<Integer> succeedingIndices(ArrayList<Integer> i1, ArrayList<Integer> i2) {
+        ArrayList<Integer> offsets = new ArrayList<Integer>();
         int pp1 = 0;
         int pp2 = 0;
         while (pp1 < i1.size() && pp2 < i2.size()) {
             if (i2.get(pp2) - i1.get(pp1) == 1) {
-                return true;
+                offsets.add(i2.get(pp2));
+                pp1++; pp2++;
             } else if (i2.get(pp2) - i1.get(pp1) > 1) {
                 pp1++;
             } else {
                 pp2++;
             }
         }
-        return false;
+        return offsets;
     }
 
     /**
-     *  No need for cleanup in a HashedIndex.
+     *  Returns the number postings list in the index
+     */
+    public int size() {
+        return index.size();
+    }
+
+    /**
+     *  Moves the entire index to disk and clears it from working memory
+     */
+    public void transferIndexToDisk(int blockID) {
+        IndexWriter iw = new IndexWriter();
+        iw.writeIndexToDisk(index, Integer.toString(blockID), docIDs);
+        cleanup();
+    }
+
+    /**
+     *  Clears the index
      */
     public void cleanup() {
+        index.clear();
+        docIDs.clear();
+    }
+
+    public String getFilePath(String id) {
+        String path = docIDs.get(id);
+        if (path == null) {
+            IndexReader ir = new IndexReader();
+            path = ir.readFilePath(id);
+            if (path != null) {
+                if (docIDs.size() >= Constants.pathCacheMaxSize) {
+                    docIDs.remove(pathCache.poll());
+                }
+                docIDs.put(id, path);
+                pathCache.add(id);
+            }
+        }
+        return path;
+    }
+
+    public void addFilePath(String key, String value) {
+        docIDs.put(key, value);
+    }
+
+    public void setFilePaths(HashMap<String, String> map) {
+        for (String key : map.keySet()) {
+            pathCache.add(key);
+        }
+        docIDs = map;
     }
 }

@@ -186,11 +186,16 @@ public class Indexer {
 		}
     }
 
-    public void prepareFilePaths() {
-    	IndexReader ir = new IndexReader();
-    	HashMap<String, String> map = ir.prepareFilePaths();
-    	if (map != null) {
-    		index.setFilePaths(map);
+    public void finalPreparations() {
+    	if (!Constants.keepInMemory) {
+    		IndexReader ir = new IndexReader();
+    		HashMap<String, String> map = ir.prepareFilePaths();
+    		if (map != null) {
+    			index.setFilePaths(map);
+    			index.setNumDocs(map.size());
+    		}
+    	} else {
+    		index.setNumDocs(lastDocID);
     	}
     }
 }

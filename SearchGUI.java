@@ -353,10 +353,8 @@ public class SearchGUI extends JFrame {
 		    	indexer.mergeIndexFiles();
 		    }
 	    }
-	    if (!Constants.keepInMemory) {
-	    	resultWindow.setText( "\n  Loading..." );
-	    	indexer.prepareFilePaths();
-	    }
+	    resultWindow.setText( "\n  Loading..." );
+	    indexer.finalPreparations();
 	    resultWindow.setText( "\n  Done!" );
 	}
     };

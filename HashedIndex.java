@@ -28,6 +28,7 @@ public class HashedIndex implements Index {
     private HashMap<String, String> docIDs = new HashMap<String,String>();
     private Queue<String> cache = new LinkedList<String>();
     private Queue<String> pathCache = new LinkedList<String>();
+    private int numDocs = 0;
 
 
     /**
@@ -251,5 +252,9 @@ public class HashedIndex implements Index {
             pathCache.add(key);
         }
         docIDs = map;
+    }
+
+    public void setNumDocs(int n) {
+        numDocs = n;
     }
 }

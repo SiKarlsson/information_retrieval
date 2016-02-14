@@ -44,6 +44,7 @@ public interface Index {
     public String getFilePath(String id);
     public void addFilePath(String key, String value);
     public void setFilePaths(HashMap<String, String> map);
+    public void setNumDocs(int n);
 
 }
 		    

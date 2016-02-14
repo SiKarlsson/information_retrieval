@@ -49,10 +49,9 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
         this.offsets = offsets;
     }
 
-    //
-    //  YOUR CODE HERE
-    //
-
+    public int getTermFrequency() {
+        return offsets.size();
+    }
 }
 
     

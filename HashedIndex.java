@@ -84,7 +84,7 @@ public class HashedIndex implements Index {
         switch (queryType) {
             case INTERSECTION_QUERY:  return intersect(query);
             case PHRASE_QUERY:        return phrase(query);
-            case RANKED_QUERY:        return intersect(query);
+            case RANKED_QUERY:        return ranked(query);
             default:                  return null;
         }
     }
@@ -203,6 +203,30 @@ public class HashedIndex implements Index {
         return offsets;
     }
 
+    public PostingsList ranked(Query query) {
+        HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
+        for (int i = 0; i < query.terms.size(); i++) {
+            PostingsList pl = getPostings(query.terms.get(i));
+            if (pl != null) { 
+                for (int j = 0; j < pl.size(); j++) {
+                    PostingsEntry pe = pl.get(j);
+                    PostingsEntry res = docs.get(pl.get(j).docID);
+                    if (res == null) {
+                        res = new PostingsEntry(pe.docID);
+                    }
+                    res.score += tfIdf(pl, pe);
+                    docs.put(res.docID, res);
+                }
+            }
+        }
+        LinkedList<PostingsEntry> postingsList = new LinkedList<PostingsEntry>(docs.values());
+        PostingsList answer = new PostingsList();
+        answer.setPostingsList(postingsList);
+        answer.sort();
+
+        return answer;
+    }
+
     /**
      *  Returns the number postings list in the index
      */
@@ -256,5 +280,13 @@ public class HashedIndex implements Index {
 
     public void setNumDocs(int n) {
         numDocs = n;
+    }
+
+    private double tfIdf(PostingsList pl, PostingsEntry pe) {
+        double tf = pe.getTermFrequency();
+        double df = pl.size();
+        double idf = Math.log((double)numDocs/df);
+        double len = docLengths.get("" + pe.docID);
+        return tf*idf/len;
     }
 }

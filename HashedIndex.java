@@ -49,10 +49,7 @@ public class HashedIndex implements Index {
      *  Returns all the words in the index.
      */
     public Iterator<String> getDictionary() {
-	// 
-	//  REPLACE THE STATEMENT BELOW WITH YOUR CODE
-	//
-	return null;
+	   return index.keySet().iterator();
     }
 
 
@@ -208,13 +205,14 @@ public class HashedIndex implements Index {
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
             if (pl != null) { 
+                double tfIdfQ = tfIdf(1, query.terms.size(), pl.size());
                 for (int j = 0; j < pl.size(); j++) {
                     PostingsEntry pe = pl.get(j);
                     PostingsEntry res = docs.get(pl.get(j).docID);
                     if (res == null) {
                         res = new PostingsEntry(pe.docID);
                     }
-                    res.score += tfIdf(pl, pe);
+                    res.score += (pe.score/docLengths.get("" + pe.docID))*(tfIdfQ/query.terms.size());
                     docs.put(res.docID, res);
                 }
             }
@@ -282,11 +280,22 @@ public class HashedIndex implements Index {
         numDocs = n;
     }
 
-    private double tfIdf(PostingsList pl, PostingsEntry pe) {
-        double tf = pe.getTermFrequency();
-        double df = pl.size();
-        double idf = Math.log((double)numDocs/df);
-        double len = docLengths.get("" + pe.docID);
-        return tf*idf/len;
+    private double tfIdf(int tf, int numDocs, int df) {
+        double idf = Math.log((double)numDocs/(double)df);
+        return tf*idf;
+    }
+
+    public void calculateScores() {
+        Iterator it = getDictionary();
+        while (it.hasNext()) {
+            String term = (String)it.next();
+            PostingsList pl = index.get(term);
+            int documentFreq = pl.size();
+            for (int i = 0; i < pl.size(); i++) {
+                PostingsEntry pe = pl.get(i);
+                int len = docLengths.get("" + pe.docID);
+                pe.calculateScore(numDocs, documentFreq);
+            }
+        }
     }
 }

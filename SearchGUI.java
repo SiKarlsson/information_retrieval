@@ -355,6 +355,7 @@ public class SearchGUI extends JFrame {
 	    }
 	    resultWindow.setText( "\n  Loading..." );
 	    indexer.finalPreparations();
+	    indexer.calculateScores();
 	    resultWindow.setText( "\n  Done!" );
 	}
     };

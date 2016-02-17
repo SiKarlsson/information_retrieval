@@ -198,5 +198,9 @@ public class Indexer {
     		index.setNumDocs(lastDocID);
     	}
     }
+
+    public void calculateScores() {
+    	index.calculateScores();	
+    }
 }
 	

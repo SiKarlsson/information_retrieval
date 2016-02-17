@@ -205,7 +205,7 @@ public class HashedIndex implements Index {
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
             if (pl != null) { 
-                double tfIdfQ = tfIdf(1, query.terms.size(), pl.size());
+                double tfIdfQ = tfIdf(1, numDocs, pl.size());
                 for (int j = 0; j < pl.size(); j++) {
                     PostingsEntry pe = pl.get(j);
                     PostingsEntry res = docs.get(pl.get(j).docID);

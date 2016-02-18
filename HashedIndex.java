@@ -212,14 +212,21 @@ public class HashedIndex implements Index {
                     if (res == null) {
                         res = new PostingsEntry(pe.docID);
                     }
-                    res.score += (pe.score/docLengths.get("" + pe.docID))*(tfIdfQ/query.terms.size());
+                    res.score += pe.score*tfIdfQ;
                     docs.put(res.docID, res);
                 }
             }
         }
+
         LinkedList<PostingsEntry> postingsList = new LinkedList<PostingsEntry>(docs.values());
         PostingsList answer = new PostingsList();
         answer.setPostingsList(postingsList);
+
+        for (int i = 0; i < answer.size(); i++) {
+            PostingsEntry pe = answer.get(i);
+            pe.score = pe.score/(docLengths.get("" + pe.docID) * query.terms.size());
+        }
+
         answer.sort();
 
         return answer;

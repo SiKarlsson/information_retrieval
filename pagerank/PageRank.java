@@ -168,6 +168,9 @@ public class PageRank{
             System.err.print(" Done with iteration " + iter + "...");
         }
         System.err.print( "done. " );
+        ArrayList<Document> docs = docsToList(x_prime);
+        Collections.sort(docs);
+        printScoreToFile(docs);
     }
 
     private double prob(int i, int j, int numberOfDocs) {
@@ -194,6 +197,26 @@ public class PageRank{
             x[i] = 1.0/numberOfDocs;
         }
         return x;
+    }
+
+    private ArrayList<Document> docsToList(double[] x) {
+        ArrayList<Document> docs = new ArrayList<Document>();
+        for (int i = 0; i < x.length; i++) {
+            docs.add(new Document(docName[i], x[i]));
+        }
+        return docs;
+    }
+
+    private void printScoreToFile(ArrayList<Document> docs) {
+        try {
+            PrintWriter writer = new PrintWriter("page_rank.txt", "UTF-8");
+            for (int i = 0; i < 60; i++) {
+                writer.println("" + (i+1) + ": " + docs.get(i).getDocNumber() + " " + docs.get(i).getRankScore());
+            }
+            writer.close();
+        } catch (IOException ioe) {
+            ioe.getMessage();
+        }
     }
 
     public static void main( String[] args ) {

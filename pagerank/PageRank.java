@@ -73,9 +73,26 @@ public class PageRank{
      */
     final static int MAX_NUMBER_OF_ITERATIONS = 1000;
 
-    public PageRank( String filename ) {
+    /**
+     * 's' for standar
+     * 'mc1' for monte carlo 1
+     * 'mc2' for monte carlo 2
+     */
+    static String computingMethod;
+
+    public PageRank(String filename, String computingMethod) {
+        this.computingMethod = computingMethod;
         int noOfDocs = readDocs(filename);
-        computePagerank(noOfDocs);
+        switch (computingMethod) {
+            case "s":   computePagerank(noOfDocs);
+                        break;
+            case "mc1": mc1(noOfDocs);
+                        break;
+            case "mc2": mc2(noOfDocs);
+                        break;
+            default:    computePagerank(noOfDocs);
+                        break;
+        }
     }
 
     /**
@@ -168,9 +185,7 @@ public class PageRank{
             System.err.print(" Done with iteration " + iter + "...");
         }
         System.err.print( "done. " );
-        ArrayList<Document> docs = docsToList(x_prime);
-        Collections.sort(docs);
-        printScoreToFile(docs);
+        printScoreToFile(x_prime);
     }
 
     private double prob(int i, int j, int numberOfDocs) {
@@ -199,17 +214,58 @@ public class PageRank{
         return x;
     }
 
-    private ArrayList<Document> docsToList(double[] x) {
-        ArrayList<Document> docs = new ArrayList<Document>();
-        for (int i = 0; i < x.length; i++) {
-            docs.add(new Document(docName[i], x[i]));
+    public void mc1(int numberOfDocs) {
+        Random r = new Random();
+        double[] x = new double[numberOfDocs];
+        for (int i = 0; i < numberOfDocs; i++) {
+            x[simulatedRandomWalk(r.nextInt(numberOfDocs), numberOfDocs)]++;
         }
-        return docs;
+        for (int i = 0; i < numberOfDocs; i++) {
+            x[i] = x[i]/numberOfDocs;
+        }
+        printScoreToFile(x);
     }
 
-    private void printScoreToFile(ArrayList<Document> docs) {
+    public void mc2(int numberOfDocs) {
+        int m = 1;
+        Random r = new Random();
+        double[] x = new double[numberOfDocs];
+        for (int i = 0; i < numberOfDocs; i++) {
+            for (int j = 0; j < m; j++) {
+                x[simulatedRandomWalk(i, numberOfDocs)]++;
+            }
+        }
+        for (int i = 0; i < numberOfDocs; i++) {
+            x[i] = x[i]/(numberOfDocs*m);
+        }
+        printScoreToFile(x);
+    }
+
+    private int simulatedRandomWalk(int startPage, int numberOfDocs) {
+        Random r = new Random();
+        int currPage = startPage;
+        while (r.nextDouble() > BORED) {
+            if (out[currPage] > 0) {
+                currPage = randomOutlink(currPage);
+            } else {
+                currPage = r.nextInt(numberOfDocs);
+            }
+        }
+        return currPage;
+    }
+
+    private int randomOutlink(int page) {
+        Hashtable outlinks = link.get(page);
+        Object[] keys = outlinks.keySet().toArray();
+        Object key = keys[new Random().nextInt(keys.length)];    
+        return (Integer)key;
+    }
+
+    private void printScoreToFile(double[] x) {
+        ArrayList<Document> docs = docsToList(x);
+        Collections.sort(docs);
         try {
-            PrintWriter writer = new PrintWriter("page_rank.txt", "UTF-8");
+            PrintWriter writer = new PrintWriter("page_rank_" + computingMethod + ".txt", "UTF-8");
             for (int i = 0; i < 60; i++) {
                 writer.println("" + (i+1) + ": " + docs.get(i).getDocNumber() + " " + docs.get(i).getRankScore());
             }
@@ -219,11 +275,19 @@ public class PageRank{
         }
     }
 
+    private ArrayList<Document> docsToList(double[] x) {
+        ArrayList<Document> docs = new ArrayList<Document>();
+        for (int i = 0; i < x.length; i++) {
+            docs.add(new Document(docName[i], x[i]));
+        }
+        return docs;
+    }
+
     public static void main( String[] args ) {
-        if ( args.length != 1 ) {
-            System.err.println( "Please give the name of the link file" );
+        if ( args.length != 2 ) {
+            System.err.println( "Please give the name of the link file and method of computing pagerank" );
         } else {
-            new PageRank( args[0] );
+            new PageRank(args[0], args[1]);
         }
     }
 }

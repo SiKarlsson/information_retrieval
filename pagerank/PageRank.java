@@ -87,22 +87,24 @@ public class PageRank{
     public PageRank(String filename, String computingMethod) {
         this.computingMethod = computingMethod;
         int noOfDocs = readDocs(filename);
+        double[] x;
         switch (computingMethod) {
-            case "s":   computePagerank(noOfDocs);
+            case "s":   x = computePagerank(noOfDocs);
                         break;
-            case "mc1": mc1(noOfDocs, N);
+            case "mc1": x = mc1(noOfDocs, N);
                         break;
-            case "mc2": mc2(noOfDocs, M);
+            case "mc2": x = mc2(noOfDocs, M);
                         break;
-            case "mc3": mc3(noOfDocs, M);
+            case "mc3": x = mc3(noOfDocs, M);
                         break;
-            case "mc4": mc4(noOfDocs, M);
+            case "mc4": x = mc4(noOfDocs, M);
                         break;
-            case "mc5": mc5(noOfDocs, N);
+            case "mc5": x = mc5(noOfDocs, N);
                         break;
-            default:    computePagerank(noOfDocs);
+            default:    x = computePagerank(noOfDocs);
                         break;
         }
+        printScoreToFile(x);
     }
 
     /**
@@ -178,7 +180,7 @@ public class PageRank{
     /*
     *   Computes the pagerank of each document.
     */
-    void computePagerank(int numberOfDocs) {
+    double[] computePagerank(int numberOfDocs) {
         System.err.print("Computing PageRank... Running first iteration...");
         double[] x_prime = initProbDist(numberOfDocs);
         double[] x = new double[numberOfDocs];
@@ -195,7 +197,7 @@ public class PageRank{
             System.err.print(" Done with iteration " + iter + "...");
         }
         System.err.print( "done. " );
-        printScoreToFile(x_prime);
+        return x_prime;
     }
 
     private double prob(int i, int j, int numberOfDocs) {
@@ -224,7 +226,7 @@ public class PageRank{
         return x;
     }
 
-    public void mc1(int numberOfDocs, int N) {
+    public double[] mc1(int numberOfDocs, int N) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         for (int i = 0; i < N; i++) {
@@ -233,10 +235,10 @@ public class PageRank{
         for (int i = 0; i < numberOfDocs; i++) {
             x[i] = x[i]/N;
         }
-        printScoreToFile(x);
+        return x;
     }
 
-    public void mc2(int numberOfDocs, int M) {
+    public double[] mc2(int numberOfDocs, int M) {
         double[] x = new double[numberOfDocs];
         for (int i = 0; i < numberOfDocs; i++) {
             for (int j = 0; j < M; j++) {
@@ -246,10 +248,10 @@ public class PageRank{
         for (int i = 0; i < numberOfDocs; i++) {
             x[i] = x[i]/(numberOfDocs*M);
         }
-        printScoreToFile(x);
+        return x;
     }
 
-    public void mc3(int numberOfDocs, int M) {
+    public double[] mc3(int numberOfDocs, int M) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
@@ -273,10 +275,10 @@ public class PageRank{
         for (int i = 0; i < numberOfDocs; i++) {
             x[i] = (x[i]*BORED)/(numberOfDocs*M);
         }
-        printScoreToFile(x);
+        return x;
     }
 
-    public void mc4(int numberOfDocs, int M) {
+    public double[] mc4(int numberOfDocs, int M) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
@@ -300,10 +302,10 @@ public class PageRank{
         for (int i = 0; i < numberOfDocs; i++) {
             x[i] = x[i]/visited;
         }
-        printScoreToFile(x);
+        return x;
     }
 
-    public void mc5(int numberOfDocs, int N) {
+    public double[] mc5(int numberOfDocs, int N) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
@@ -325,7 +327,7 @@ public class PageRank{
         for (int i = 0; i < numberOfDocs; i++) {
             x[i] = x[i]/visited;
         }
-        printScoreToFile(x);
+        return x;
     }
 
     private int simulatedRandomWalk(int startPage, int numberOfDocs) {

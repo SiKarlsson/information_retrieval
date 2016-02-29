@@ -73,6 +73,10 @@ public class PageRank{
      */
     final static int MAX_NUMBER_OF_ITERATIONS = 1000;
 
+    final static int N = MAX_NUMBER_OF_DOCS;
+
+    final static int M = 100;
+
     /**
      * 's' for standar
      * 'mc1' for monte carlo 1
@@ -86,9 +90,15 @@ public class PageRank{
         switch (computingMethod) {
             case "s":   computePagerank(noOfDocs);
                         break;
-            case "mc1": mc1(noOfDocs);
+            case "mc1": mc1(noOfDocs, N);
                         break;
-            case "mc2": mc2(noOfDocs);
+            case "mc2": mc2(noOfDocs, M);
+                        break;
+            case "mc3": mc3(noOfDocs, M);
+                        break;
+            case "mc4": mc4(noOfDocs, M);
+                        break;
+            case "mc5": mc5(noOfDocs, N);
                         break;
             default:    computePagerank(noOfDocs);
                         break;
@@ -214,29 +224,106 @@ public class PageRank{
         return x;
     }
 
-    public void mc1(int numberOfDocs) {
+    public void mc1(int numberOfDocs, int N) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
-        for (int i = 0; i < numberOfDocs; i++) {
+        for (int i = 0; i < N; i++) {
             x[simulatedRandomWalk(r.nextInt(numberOfDocs), numberOfDocs)]++;
         }
         for (int i = 0; i < numberOfDocs; i++) {
-            x[i] = x[i]/numberOfDocs;
+            x[i] = x[i]/N;
         }
         printScoreToFile(x);
     }
 
-    public void mc2(int numberOfDocs) {
-        int m = 1;
-        Random r = new Random();
+    public void mc2(int numberOfDocs, int M) {
         double[] x = new double[numberOfDocs];
         for (int i = 0; i < numberOfDocs; i++) {
-            for (int j = 0; j < m; j++) {
+            for (int j = 0; j < M; j++) {
                 x[simulatedRandomWalk(i, numberOfDocs)]++;
             }
         }
         for (int i = 0; i < numberOfDocs; i++) {
-            x[i] = x[i]/(numberOfDocs*m);
+            x[i] = x[i]/(numberOfDocs*M);
+        }
+        printScoreToFile(x);
+    }
+
+    public void mc3(int numberOfDocs, int M) {
+        Random r = new Random();
+        double[] x = new double[numberOfDocs];
+        int visited = 0;
+        for (int i = 0; i < numberOfDocs; i++) {
+            for (int j = 0; j < M; j++) {
+                int currPage = i;
+                Boolean walking = true;
+                while (walking) {
+                    visited++;
+                    x[currPage]++;
+                    if (r.nextDouble() <= BORED) {
+                        walking = false;
+                    } else if (out[currPage] > 0) {
+                        currPage = randomOutlink(currPage);
+                    } else {
+                        currPage = r.nextInt(numberOfDocs);
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < numberOfDocs; i++) {
+            x[i] = (x[i]*BORED)/(numberOfDocs*M);
+        }
+        printScoreToFile(x);
+    }
+
+    public void mc4(int numberOfDocs, int M) {
+        Random r = new Random();
+        double[] x = new double[numberOfDocs];
+        int visited = 0;
+        for (int i = 0; i < numberOfDocs; i++) {
+            for (int j = 0; j < M; j++) {
+                int currPage = i;
+                Boolean walking = true;
+                while (walking) {
+                    visited++;
+                    x[currPage]++;
+                    if (r.nextDouble() <= BORED) {
+                        walking = false;
+                    } else if (out[currPage] > 0) {
+                        currPage = randomOutlink(currPage);
+                    } else {
+                        walking = false;
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < numberOfDocs; i++) {
+            x[i] = x[i]/visited;
+        }
+        printScoreToFile(x);
+    }
+
+    public void mc5(int numberOfDocs, int N) {
+        Random r = new Random();
+        double[] x = new double[numberOfDocs];
+        int visited = 0;
+        for (int i = 0; i < N; i++) {
+            int currPage = r.nextInt(numberOfDocs);
+            Boolean walking = true;
+            while (walking) {
+                visited++;
+                x[currPage]++;
+                if (r.nextDouble() <= BORED) {
+                    walking = false;
+                } else if (out[currPage] > 0) {
+                    currPage = randomOutlink(currPage);
+                } else {
+                    walking = false;
+                }
+            }
+        }
+        for (int i = 0; i < numberOfDocs; i++) {
+            x[i] = x[i]/visited;
         }
         printScoreToFile(x);
     }

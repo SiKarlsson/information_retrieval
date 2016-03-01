@@ -77,6 +77,8 @@ public class PageRank{
 
     final static int M = 100;
 
+    int numberOfDocs;
+
     /**
      * 's' for standar
      * 'mc1' for monte carlo 1
@@ -86,25 +88,29 @@ public class PageRank{
 
     public PageRank(String filename, String computingMethod) {
         this.computingMethod = computingMethod;
-        int noOfDocs = readDocs(filename);
+        numberOfDocs = readDocs(filename);
         double[] x;
         switch (computingMethod) {
-            case "s":   x = computePagerank(noOfDocs);
+            case "s":   x = computePagerank();
                         break;
-            case "mc1": x = mc1(noOfDocs, N);
+            case "mc1": x = mc1(N);
                         break;
-            case "mc2": x = mc2(noOfDocs, M);
+            case "mc2": x = mc2(M);
                         break;
-            case "mc3": x = mc3(noOfDocs, M);
+            case "mc3": x = mc3(M);
                         break;
-            case "mc4": x = mc4(noOfDocs, M);
+            case "mc4": x = mc4(M);
                         break;
-            case "mc5": x = mc5(noOfDocs, N);
+            case "mc5": x = mc5(N);
                         break;
-            default:    x = computePagerank(noOfDocs);
+            default:    x = computePagerank();
                         break;
         }
         printScoreToFile(x);
+    }
+
+    public PageRank(String filename) {
+        numberOfDocs = readDocs(filename);
     }
 
     /**
@@ -180,9 +186,9 @@ public class PageRank{
     /*
     *   Computes the pagerank of each document.
     */
-    double[] computePagerank(int numberOfDocs) {
+    double[] computePagerank() {
         System.err.print("Computing PageRank... Running first iteration...");
-        double[] x_prime = initProbDist(numberOfDocs);
+        double[] x_prime = initProbDist();
         double[] x = new double[numberOfDocs];
         int iter = 0;
         while (diff(x, x_prime) > EPSILON && iter < MAX_NUMBER_OF_ITERATIONS) {
@@ -190,7 +196,7 @@ public class PageRank{
             for (int i = 0; i < x_prime.length; i++) {
                 x_prime[i] = 0;
                 for (int j = 0; j < x.length; j++) {
-                    x_prime[i] += x[j] * prob(i, j, numberOfDocs);
+                    x_prime[i] += x[j] * prob(i, j);
                 }
             }
             iter++;
@@ -200,7 +206,7 @@ public class PageRank{
         return x_prime;
     }
 
-    private double prob(int i, int j, int numberOfDocs) {
+    private double prob(int i, int j) {
         if (out[j] == 0) {
             return 1.0/numberOfDocs;
         } else if (link.get(j).get(i) == null) {
@@ -218,7 +224,7 @@ public class PageRank{
         return diff;
     }
 
-    private double[] initProbDist(int numberOfDocs) {
+    private double[] initProbDist() {
         double[] x = new double[numberOfDocs];
         for (int i = 0; i < x.length; i++) {
             x[i] = 1.0/numberOfDocs;
@@ -226,11 +232,11 @@ public class PageRank{
         return x;
     }
 
-    public double[] mc1(int numberOfDocs, int N) {
+    public double[] mc1(int N) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         for (int i = 0; i < N; i++) {
-            x[simulatedRandomWalk(r.nextInt(numberOfDocs), numberOfDocs)]++;
+            x[simulatedRandomWalk(r.nextInt(numberOfDocs))]++;
         }
         for (int i = 0; i < numberOfDocs; i++) {
             x[i] = x[i]/N;
@@ -238,11 +244,11 @@ public class PageRank{
         return x;
     }
 
-    public double[] mc2(int numberOfDocs, int M) {
+    public double[] mc2(int M) {
         double[] x = new double[numberOfDocs];
         for (int i = 0; i < numberOfDocs; i++) {
             for (int j = 0; j < M; j++) {
-                x[simulatedRandomWalk(i, numberOfDocs)]++;
+                x[simulatedRandomWalk(i)]++;
             }
         }
         for (int i = 0; i < numberOfDocs; i++) {
@@ -251,7 +257,7 @@ public class PageRank{
         return x;
     }
 
-    public double[] mc3(int numberOfDocs, int M) {
+    public double[] mc3(int M) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
@@ -278,7 +284,7 @@ public class PageRank{
         return x;
     }
 
-    public double[] mc4(int numberOfDocs, int M) {
+    public double[] mc4(int M) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
@@ -305,7 +311,7 @@ public class PageRank{
         return x;
     }
 
-    public double[] mc5(int numberOfDocs, int N) {
+    public double[] mc5(int N) {
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
@@ -330,7 +336,7 @@ public class PageRank{
         return x;
     }
 
-    private int simulatedRandomWalk(int startPage, int numberOfDocs) {
+    private int simulatedRandomWalk(int startPage) {
         Random r = new Random();
         int currPage = startPage;
         while (r.nextDouble() > BORED) {
@@ -350,7 +356,7 @@ public class PageRank{
         return (Integer)key;
     }
 
-    private void printScoreToFile(double[] x) {
+    public void printScoreToFile(double[] x) {
         ArrayList<Document> docs = docsToList(x);
         Collections.sort(docs);
         try {
@@ -364,7 +370,7 @@ public class PageRank{
         }
     }
 
-    private ArrayList<Document> docsToList(double[] x) {
+    public ArrayList<Document> docsToList(double[] x) {
         ArrayList<Document> docs = new ArrayList<Document>();
         for (int i = 0; i < x.length; i++) {
             docs.add(new Document(docName[i], x[i]));

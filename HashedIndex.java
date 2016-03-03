@@ -26,6 +26,8 @@ public class HashedIndex implements Index {
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
     private HashMap<String, String> docIDs = new HashMap<String,String>();
+    private HashMap<String, Integer> articleTitles = new HashMap<String, Integer>();
+    private HashMap<Integer, Double> pageRanks = new HashMap<Integer, Double>();
     private Queue<String> cache = new LinkedList<String>();
     private Queue<String> pathCache = new LinkedList<String>();
     private int numDocs = 0;
@@ -280,6 +282,14 @@ public class HashedIndex implements Index {
             pathCache.add(key);
         }
         docIDs = map;
+    }
+
+    public void setArticleTitles(HashMap<String, Integer> map) {
+        articleTitles = map;
+    }
+
+    public void setPageRanks(HashMap<Integer, Double> map) {
+        pageRanks = map;
     }
 
     public void setNumDocs(int n) {

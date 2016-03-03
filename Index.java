@@ -46,6 +46,8 @@ public interface Index {
     public void setFilePaths(HashMap<String, String> map);
     public void setNumDocs(int n);
     public void calculateScores();
+    public void setArticleTitles(HashMap<String, Integer> map);
+    public void setPageRanks(HashMap<Integer, Double> map);
 
 }
 		    

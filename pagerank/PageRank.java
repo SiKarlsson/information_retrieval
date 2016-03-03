@@ -106,6 +106,7 @@ public class PageRank{
             default:    x = computePagerank();
                         break;
         }
+        writeEntireRankToFile(x);
         printScoreToFile(x);
     }
 
@@ -376,6 +377,19 @@ public class PageRank{
             docs.add(new Document(docName[i], x[i]));
         }
         return docs;
+    }
+
+    public void writeEntireRankToFile(double[] x) {
+        ArrayList<Document> docs = docsToList(x);
+        try {
+            PrintWriter writer = new PrintWriter("page_rank.txt", "UTF-8");
+            for (int i = 0; i < docs.size(); i++) {
+                writer.println(docs.get(i).getDocNumber() + " " + docs.get(i).getRankScore());
+            }
+            writer.close();
+        } catch (IOException ioe) {
+            ioe.getMessage();
+        }
     }
 
     public static void main( String[] args ) {

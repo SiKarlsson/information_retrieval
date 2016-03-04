@@ -351,7 +351,6 @@ public class HashedIndex implements Index {
             int documentFreq = pl.size();
             for (int i = 0; i < pl.size(); i++) {
                 PostingsEntry pe = pl.get(i);
-                int len = docLengths.get("" + pe.docID);
                 pe.calculateScore(numDocs, documentFreq);
             }
         }

@@ -189,7 +189,7 @@ public class SearchGUI extends JFrame {
 				buf.append( filename );
 			    }
 			    if ( queryType == Index.RANKED_QUERY ) {
-				buf.append( "   " + String.format( "%.5f", results.get(i).score )); 
+				buf.append( "   " + String.format( "%.10f", results.get(i).score )); 
 			    }
 			    buf.append( "\n" );
 			}

@@ -83,7 +83,7 @@ public class HashedIndex implements Index {
         switch (queryType) {
             case INTERSECTION_QUERY:  return intersect(query);
             case PHRASE_QUERY:        return phrase(query);
-            case RANKED_QUERY:        return ranked(query);
+            case RANKED_QUERY:        return ranked(query, rankingType);
             default:                  return null;
         }
     }
@@ -202,7 +202,7 @@ public class HashedIndex implements Index {
         return offsets;
     }
 
-    public PostingsList ranked(Query query) {
+    public PostingsList ranked(Query query, int rankingType) {
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
@@ -228,9 +228,51 @@ public class HashedIndex implements Index {
             pe.score = pe.score/(docLengths.get("" + pe.docID));
         }
 
+        if (rankingType == Index.PAGERANK) {
+            for (int i = 0; i < answer.size(); i++) {
+                PostingsEntry pe = answer.get(i);
+                pe.score = pageRank(pe.docID);
+            }
+        }
+
+        if (rankingType == Index.COMBINATION) {
+            for (int i = 0; i < answer.size(); i++) {
+                PostingsEntry pe = answer.get(i);
+                pe.score = pageRankFunction(pe.score, pe.docID);
+            }
+        }
+
         answer.sort();
 
         return answer;
+    }
+
+    public double pageRank(int docID) {
+        String filePath;
+        int docNumber;
+        double pageRank;
+        if (getFilePath("" + docID) == null) {
+            return 0.0;
+        } else {
+            filePath = getFilePath("" + docID);
+        }
+        if (articleTitles.get(filePath) == null) {
+            return 0.0;
+        } else {
+            docNumber = articleTitles.get(filePath);
+        }
+        if (pageRanks.get(docNumber) == null) {
+            return 0.0;
+        } else {
+            pageRank = pageRanks.get(docNumber);
+        }
+        return pageRank;
+    }
+
+    public double pageRankFunction(double tfIdfScore, int docID) {
+        double a = 1.0;
+        double b = 500.0;
+        return a*tfIdfScore + b*pageRank(docID);
     }
 
     /**

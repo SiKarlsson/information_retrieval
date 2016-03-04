@@ -223,10 +223,7 @@ public class HashedIndex implements Index {
         PostingsList answer = new PostingsList();
         answer.setPostingsList(postingsList);
 
-        for (int i = 0; i < answer.size(); i++) {
-            PostingsEntry pe = answer.get(i);
-            pe.score = pe.score/(docLengths.get("" + pe.docID));
-        }
+        answer = lengthNormalize(answer);
 
         if (rankingType == Index.PAGERANK) {
             for (int i = 0; i < answer.size(); i++) {
@@ -245,6 +242,14 @@ public class HashedIndex implements Index {
         answer.sort();
 
         return answer;
+    }
+
+    private PostingsList lengthNormalize(PostingsList answer) {
+        for (int i = 0; i < answer.size(); i++) {
+            PostingsEntry pe = answer.get(i);
+            pe.score = pe.score/(docLengths.get("" + pe.docID));
+        }
+        return answer;        
     }
 
     public double pageRank(int docID) {

@@ -26,6 +26,8 @@ public class HashedIndex implements Index {
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
     private HashMap<String, String> docIDs = new HashMap<String,String>();
+    private HashMap<String, Integer> articleTitles = new HashMap<String, Integer>();
+    private HashMap<Integer, Double> pageRanks = new HashMap<Integer, Double>();
     private Queue<String> cache = new LinkedList<String>();
     private Queue<String> pathCache = new LinkedList<String>();
     private int numDocs = 0;
@@ -81,7 +83,7 @@ public class HashedIndex implements Index {
         switch (queryType) {
             case INTERSECTION_QUERY:  return intersect(query);
             case PHRASE_QUERY:        return phrase(query);
-            case RANKED_QUERY:        return ranked(query);
+            case RANKED_QUERY:        return ranked(query, rankingType);
             default:                  return null;
         }
     }
@@ -200,7 +202,7 @@ public class HashedIndex implements Index {
         return offsets;
     }
 
-    public PostingsList ranked(Query query) {
+    public PostingsList ranked(Query query, int rankingType) {
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
@@ -226,9 +228,51 @@ public class HashedIndex implements Index {
             pe.score = pe.score/(docLengths.get("" + pe.docID));
         }
 
+        if (rankingType == Index.PAGERANK) {
+            for (int i = 0; i < answer.size(); i++) {
+                PostingsEntry pe = answer.get(i);
+                pe.score = pageRank(pe.docID);
+            }
+        }
+
+        if (rankingType == Index.COMBINATION) {
+            for (int i = 0; i < answer.size(); i++) {
+                PostingsEntry pe = answer.get(i);
+                pe.score = pageRankFunction(pe.score, pe.docID);
+            }
+        }
+
         answer.sort();
 
         return answer;
+    }
+
+    public double pageRank(int docID) {
+        String filePath;
+        int docNumber;
+        double pageRank;
+        if (getFilePath("" + docID) == null) {
+            return 0.0;
+        } else {
+            filePath = getFilePath("" + docID);
+        }
+        if (articleTitles.get(filePath) == null) {
+            return 0.0;
+        } else {
+            docNumber = articleTitles.get(filePath);
+        }
+        if (pageRanks.get(docNumber) == null) {
+            return 0.0;
+        } else {
+            pageRank = pageRanks.get(docNumber);
+        }
+        return pageRank;
+    }
+
+    public double pageRankFunction(double tfIdfScore, int docID) {
+        double a = 1.0;
+        double b = 500.0;
+        return a*tfIdfScore + b*pageRank(docID);
     }
 
     /**
@@ -280,6 +324,14 @@ public class HashedIndex implements Index {
             pathCache.add(key);
         }
         docIDs = map;
+    }
+
+    public void setArticleTitles(HashMap<String, Integer> map) {
+        articleTitles = map;
+    }
+
+    public void setPageRanks(HashMap<Integer, Double> map) {
+        pageRanks = map;
     }
 
     public void setNumDocs(int n) {

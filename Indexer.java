@@ -187,8 +187,8 @@ public class Indexer {
     }
 
     public void finalPreparations() {
-    	if (!Constants.keepInMemory) {
-    		IndexReader ir = new IndexReader();
+    	IndexReader ir = new IndexReader();
+        if (!Constants.keepInMemory) {
     		HashMap<String, String> map = ir.prepareFilePaths();
     		if (map != null) {
     			index.setFilePaths(map);
@@ -197,6 +197,8 @@ public class Indexer {
     	} else {
     		index.setNumDocs(lastDocID);
     	}
+        index.setArticleTitles(ir.readArticleTitles());
+        index.setPageRanks(ir.readPageRanks());
     }
 
     public void calculateScores() {

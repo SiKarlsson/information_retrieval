@@ -235,4 +235,51 @@ public class IndexReader {
         }   
     }
 
+    public HashMap<String, Integer> readArticleTitles() {
+        BufferedReader br = null;
+        HashMap<String, Integer> map = new HashMap<String, Integer>();
+        try {
+            br = new BufferedReader(new FileReader(Constants.articleTitlesDir));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] s = line.split(";");
+                String key = Constants.defaultCorpus + s[1] + Constants.standardCorpusFileExtension;
+                map.put(key, Integer.parseInt(s[0]));
+            }
+            return map;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } 
+        }
+    }
+
+    public HashMap<Integer, Double> readPageRanks() {
+        BufferedReader br = null;
+        HashMap<Integer, Double> map = new HashMap<Integer, Double>();
+        try {
+            br = new BufferedReader(new FileReader(Constants.pageRankDir));
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] s = line.split(" ");
+                map.put(Integer.parseInt(s[0]), Double.parseDouble(s[1]));
+            }
+            return map;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
 }

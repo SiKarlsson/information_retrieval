@@ -16,7 +16,7 @@ public class MonteCarloEvaluation {
     ArrayList<Document> pageRank;
 
     int numDataPoints = 15;
-    int avg = 10;
+    int avg = 100;
 
     double[] mc1Score = new double[numDataPoints];
     double[] mc2Score = new double[numDataPoints];
@@ -60,7 +60,7 @@ public class MonteCarloEvaluation {
 
     public double squaredDiffTop(double[] x) {
         double diff = 0;
-        boolean top = false;
+        boolean top = true;
         if (top) {
             for (int i = 0; i < 50; i++) {
                 double realVal = pageRank.get(i).getRankScore();

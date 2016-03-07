@@ -73,11 +73,14 @@ public class PageRank{
      */
     final static int MAX_NUMBER_OF_ITERATIONS = 1000;
 
-    final static int N = MAX_NUMBER_OF_DOCS;
+    //final static int N = MAX_NUMBER_OF_DOCS;
+    final static int N = 1000;
 
-    final static int M = 100;
+    final static int M = 1;
 
     int numberOfDocs;
+
+    double[] master;
 
     /**
      * 's' for standar
@@ -106,8 +109,19 @@ public class PageRank{
             default:    x = computePagerank();
                         break;
         }
+        loadMaster();
         writeEntireRankToFile(x);
         printScoreToFile(x);
+
+        double diff = squaredDiffTop(x);
+        boolean converged;
+        if (diff > EPSILON) {
+            converged = false;
+        } else {
+            converged = true;
+        }
+        System.out.println(diff + " " + converged);
+
     }
 
     public PageRank(String filename) {
@@ -246,23 +260,25 @@ public class PageRank{
     }
 
     public double[] mc2(int M) {
+        int N = numberOfDocs;
         double[] x = new double[numberOfDocs];
-        for (int i = 0; i < numberOfDocs; i++) {
+        for (int i = 0; i < N; i++) {
             for (int j = 0; j < M; j++) {
                 x[simulatedRandomWalk(i)]++;
             }
         }
         for (int i = 0; i < numberOfDocs; i++) {
-            x[i] = x[i]/(numberOfDocs*M);
+            x[i] = x[i]/(N*M);
         }
         return x;
     }
 
     public double[] mc3(int M) {
+        int N = numberOfDocs;
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
-        for (int i = 0; i < numberOfDocs; i++) {
+        for (int i = 0; i < N; i++) {
             for (int j = 0; j < M; j++) {
                 int currPage = i;
                 Boolean walking = true;
@@ -280,16 +296,17 @@ public class PageRank{
             }
         }
         for (int i = 0; i < numberOfDocs; i++) {
-            x[i] = (x[i]*BORED)/(numberOfDocs*M);
+            x[i] = (x[i]*BORED)/(N*M);
         }
         return x;
     }
 
     public double[] mc4(int M) {
+        int N = numberOfDocs;
         Random r = new Random();
         double[] x = new double[numberOfDocs];
         int visited = 0;
-        for (int i = 0; i < numberOfDocs; i++) {
+        for (int i = 0; i < N; i++) {
             for (int j = 0; j < M; j++) {
                 int currPage = i;
                 Boolean walking = true;
@@ -387,9 +404,63 @@ public class PageRank{
                 writer.println(docs.get(i).getDocNumber() + " " + docs.get(i).getRankScore());
             }
             writer.close();
+            File ranks = new File("page_rank_raw.txt");
+            if (!ranks.exists()) {
+                PrintWriter writer2 = new PrintWriter("page_rank_raw.txt", "UTF-8");
+                for (int i = 0; i < x.length; i++) {
+                    writer2.println(x[i]);
+                }
+                writer2.close();
+            }
         } catch (IOException ioe) {
             ioe.getMessage();
         }
+    }
+
+    public void loadMaster() {
+        master = new double[numberOfDocs];
+        File ranks = new File("page_rank_raw.txt");
+        if (ranks.exists()) {
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader("page_rank_raw.txt"));
+                String line;
+                int i = 0;
+                while ((line = br.readLine()) != null) {
+                    master[i] = Double.parseDouble(line);
+                    i++;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public double squaredDiffTop(double[] x) {
+        ArrayList<Document> pageRank = docsToList(master);
+        Collections.sort(pageRank);
+        double diff = 0;
+        boolean top = true;
+        if (top) {
+            for (int i = 0; i < 50; i++) {
+                double realVal = pageRank.get(i).getRankScore();
+                int realIndex = docNumber.get(pageRank.get(i).getDocNumber());    
+                diff += Math.pow((realVal-x[realIndex]), 2);
+            }
+        } else {
+            for (int i = (pageRank.size() - 1); i >= pageRank.size() - 50; i--) {
+                double realVal = pageRank.get(i).getRankScore();
+                int realIndex = docNumber.get(pageRank.get(i).getDocNumber());    
+                diff += Math.pow((realVal-x[realIndex]), 2);   
+            }
+        }
+        return diff;
     }
 
     public static void main( String[] args ) {

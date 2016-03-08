@@ -247,7 +247,7 @@ public class HashedIndex implements Index {
     private PostingsList lengthNormalize(PostingsList answer) {
         for (int i = 0; i < answer.size(); i++) {
             PostingsEntry pe = answer.get(i);
-            pe.score = pe.score/(docLengths.get("" + pe.docID));
+            pe.score = pe.score/Math.log(docLengths.get("" + pe.docID));
         }
         return answer;        
     }

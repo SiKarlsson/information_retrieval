@@ -8,6 +8,7 @@
 
 package ir;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.io.Serializable;
 
@@ -51,9 +52,13 @@ public class PostingsList implements Serializable {
         return false;
     }
 
-    //
-    //  YOUR CODE HERE
-    //
+    public void sort() {
+        Collections.sort(list);
+    }
+
+    public void setPostingsList(LinkedList<PostingsEntry> list) {
+        this.list = list;
+    }
 }
 	
 

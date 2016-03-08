@@ -49,10 +49,15 @@ public class PostingsEntry implements Comparable<PostingsEntry>, Serializable {
         this.offsets = offsets;
     }
 
-    //
-    //  YOUR CODE HERE
-    //
+    public int getTermFrequency() {
+        return offsets.size();
+    }
 
+    public void calculateScore(int numDocs, int df) {
+        int tf = getTermFrequency();
+        double idf = Math.log((double)numDocs/(double)df);
+        score = tf*idf;
+    }
 }
 
     

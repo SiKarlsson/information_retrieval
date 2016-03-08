@@ -10,6 +10,12 @@ package ir;
 public class Constants {
     /** The directory to write the index to. */
     private  static final String writeDir = "/Users/simon/Documents/skola/ir16/lab/index/";
+    /** The directory to read the page rank from. */
+    public  static final String pageRankDir = "/Users/simon/Documents/skola/ir16/lab/ir/pagerank/page_rank.txt";
+    /** The with translations from pageRand document id to file name. */
+    public  static final String articleTitlesDir = "/Users/simon/Documents/skola/ir16/lab/ir/pagerank/articleTitles.txt";
+    /** Default corpus. */
+    public  static final String defaultCorpus = "/Users/simon/Documents/skola/ir16/lab/davisWiki/";
     /** The name of the temporary files used when indexing. */
     private  static final String tempFileName = "t";
     /** The name of the merge files used when merging the temporary files. */
@@ -22,6 +28,8 @@ public class Constants {
     private static final String indexFileName = "i";
     /** Standard extension of text files **/
     private static final String textFileExtension = "txt";
+    /** Standard extension of document in the corpus **/
+    public static final String standardCorpusFileExtension = ".f";
     /** The maximum line size in the small index (Kb) **/
     public static final int maxLineSize = 65 * 1024;
     /** The lates docID-path pair written to file **/
@@ -31,7 +39,7 @@ public class Constants {
     /** The max size of the path cache **/
     public static final int pathCacheMaxSize = 100000;
     /** Keep in memory **/
-    public static boolean keepInMemory = false;
+    public static boolean keepInMemory = true;
 
     public static final String postingsFileName() {
         return writeDir + postingsFileName + "." + textFileExtension;

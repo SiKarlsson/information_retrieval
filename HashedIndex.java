@@ -1,11 +1,11 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   First version:  Johan Boye, 2010
  *   Second version: Johan Boye, 2012
  *   Additions: Hedvig Kjellström, 2012-14
- */  
+ */
 
 
 package ir;
@@ -95,7 +95,7 @@ public class HashedIndex implements Index {
         if (query.terms.size() > 0) {
             String term = query.terms.getFirst();
             PostingsList intersection = getPostings(term);
-            
+
             for (int i = 1; i < query.terms.size(); i++) {
                 String nextTerm = query.terms.get(i);
                 intersection = intersect(intersection, getPostings(nextTerm));
@@ -103,10 +103,10 @@ public class HashedIndex implements Index {
                     return null;
                 }
             }
-            return intersection;    
-        } else { 
+            return intersection;
+        } else {
             return null;
-        }   
+        }
     }
 
     /**
@@ -149,9 +149,9 @@ public class HashedIndex implements Index {
                 }
             }
             return phrase;
-        } else { 
+        } else {
             return null;
-        }   
+        }
     }
 
     /**
@@ -206,7 +206,7 @@ public class HashedIndex implements Index {
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
-            if (pl != null) { 
+            if (pl != null) {
                 for (int j = 0; j < pl.size(); j++) {
                     PostingsEntry pe = pl.get(j);
                     PostingsEntry res = docs.get(pl.get(j).docID);
@@ -223,7 +223,7 @@ public class HashedIndex implements Index {
         PostingsList answer = new PostingsList();
         answer.setPostingsList(postingsList);
 
-        answer = lengthNormalize(answer);
+        answer = lengthNormalize(answer, query.terms.size());
 
         if (rankingType == Index.PAGERANK) {
             for (int i = 0; i < answer.size(); i++) {
@@ -244,12 +244,12 @@ public class HashedIndex implements Index {
         return answer;
     }
 
-    private PostingsList lengthNormalize(PostingsList answer) {
+    private PostingsList lengthNormalize(PostingsList answer, int queryLength) {
         for (int i = 0; i < answer.size(); i++) {
             PostingsEntry pe = answer.get(i);
-            pe.score = pe.score/Math.log(docLengths.get("" + pe.docID));
+            pe.score = pe.score/(Math.log(docLengths.get("" + pe.docID)) * queryLength);
         }
-        return answer;        
+        return answer;
     }
 
     public double pageRank(int docID) {

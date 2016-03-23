@@ -31,6 +31,7 @@ public class HashedIndex implements Index {
     private Queue<String> cache = new LinkedList<String>();
     private Queue<String> pathCache = new LinkedList<String>();
     private int numDocs = 0;
+    private final static int IDF_THRESHOLD = 1;
 
 
     /**
@@ -93,16 +94,24 @@ public class HashedIndex implements Index {
      */
     public PostingsList intersect(Query query) {
         if (query.terms.size() > 0) {
+            System.out.println("NOW DOING SEARCH...");
+            long startTime = System.nanoTime();
             String term = query.terms.getFirst();
             PostingsList intersection = getPostings(term);
 
             for (int i = 1; i < query.terms.size(); i++) {
                 String nextTerm = query.terms.get(i);
-                intersection = intersect(intersection, getPostings(nextTerm));
+                PostingsList pl = getPostings(nextTerm);
+                if (eliminateIndex(pl)) {
+                    continue;
+                }
+                intersection = intersect(intersection, pl);
                 if (intersection == null) {
                     return null;
                 }
             }
+            long estimatedTime = System.nanoTime() - startTime;
+            System.out.println("DONE WITH SEARCH after: " + estimatedTime/(double)1000000);
             return intersection;
         } else {
             return null;
@@ -204,9 +213,13 @@ public class HashedIndex implements Index {
 
     public PostingsList ranked(Query query, int rankingType) {
         System.out.println("NOW DOING SEARCH...");
+        long startTime = System.nanoTime();
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
+            if (eliminateIndex(pl)) {
+                continue;
+            }
             if (pl != null) {
                 for (int j = 0; j < pl.size(); j++) {
                     PostingsEntry pe = pl.get(j);
@@ -242,7 +255,8 @@ public class HashedIndex implements Index {
 
         answer.sort();
 
-        System.out.println("DONE WITH SEARCH");
+        long estimatedTime = System.nanoTime() - startTime;
+        System.out.println("DONE WITH SEARCH after: " + estimatedTime/(double)1000000);
         return answer;
     }
 
@@ -349,6 +363,10 @@ public class HashedIndex implements Index {
     private double tfIdf(int tf, int numDocs, int df) {
         double idf = Math.log((double)numDocs/(double)df);
         return tf*idf;
+    }
+
+    private boolean eliminateIndex(PostingsList pl) {
+        return Math.log(numDocs/pl.size()) < IDF_THRESHOLD;
     }
 
     public void calculateScores() {

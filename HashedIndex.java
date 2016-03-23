@@ -203,6 +203,7 @@ public class HashedIndex implements Index {
     }
 
     public PostingsList ranked(Query query, int rankingType) {
+        System.out.println("NOW DOING SEARCH...");
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
             PostingsList pl = getPostings(query.terms.get(i));
@@ -213,7 +214,7 @@ public class HashedIndex implements Index {
                     if (res == null) {
                         res = new PostingsEntry(pe.docID);
                     }
-                    res.score += pe.score;
+                    res.score += pe.score*query.weights.get(query.terms.get(i));
                     docs.put(res.docID, res);
                 }
             }
@@ -241,13 +242,15 @@ public class HashedIndex implements Index {
 
         answer.sort();
 
+        System.out.println("DONE WITH SEARCH");
         return answer;
     }
 
     private PostingsList lengthNormalize(PostingsList answer, int queryLength) {
         for (int i = 0; i < answer.size(); i++) {
             PostingsEntry pe = answer.get(i);
-            pe.score = pe.score/(Math.log(docLengths.get("" + pe.docID)) * queryLength);
+            pe.score = pe.score/((Math.log(docLengths.get("" + pe.docID)) + 1) * queryLength);
+            //pe.score = pe.score/(docLengths.get("" + pe.docID) * queryLength);
         }
         return answer;
     }
@@ -275,8 +278,8 @@ public class HashedIndex implements Index {
     }
 
     public double pageRankFunction(double tfIdfScore, int docID) {
-        double a = 1.0;
-        double b = 500.0;
+        double a = 1;
+        double b = 0.75;
         return a*tfIdfScore + b*pageRank(docID);
     }
 

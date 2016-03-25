@@ -1,10 +1,10 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   First version:  Johan Boye, 2010
  *   Second version: Johan Boye, 2012
- */  
+ */
 
 
 package ir;
@@ -32,7 +32,7 @@ public class Indexer {
 
     /** The index to be built up by this indexer. */
     public Index index;
-    
+
     /** The next docID to be generated. */
     private int lastDocID = 0;
 
@@ -41,6 +41,10 @@ public class Indexer {
 
     /** The limit to store in the index before writing to file. */
     private int memoryLimit = 70371;
+
+    /** The maximum number of bigrams to store in memory. */
+    private int numBigrams = 1000;
+    private int bigramCount = 0;
 
 
     /* ----------------------------------------------- */
@@ -76,8 +80,9 @@ public class Indexer {
      *  all its files and subdirectories are recursively processed.
      */
     public void processFiles( File f ) {
-	// do not try to index fs that cannot be read
-	if ( f.canRead() ) {
+    System.out.println(f.getAbsolutePath());
+    // do not try to index fs that cannot be read
+    if ( f.canRead() ) {
 	    if ( f.isDirectory() ) {
 		String[] fs = f.list();
 		// an IO error could occur
@@ -92,8 +97,8 @@ public class Indexer {
 		int docID = generateDocID();
 		index.addFilePath( "" + docID, f.getPath() );
 		try {
-		    //  Read the first few bytes of the file to see if it is 
-		    // likely to be a PDF 
+		    //  Read the first few bytes of the file to see if it is
+		    // likely to be a PDF
 		    Reader reader = new FileReader( f );
 		    char[] buf = new char[4];
 		    reader.read( buf, 0, 4 );
@@ -114,10 +119,17 @@ public class Indexer {
 		    }
 		    SimpleTokenizer tok = new SimpleTokenizer( reader );
 		    int offset = 0;
+            String prevToken = "";
 		    while ( tok.hasMoreTokens() ) {
 			String token = tok.nextToken();
-			insertIntoIndex( docID, token, offset++ );
+			insertIntoIndex( docID, token, offset );
+            if (bigramCount < numBigrams) {
+                insertIntoBigramIndex(docID, prevToken + "," + token, offset);
+                prevToken = token;
+            }
+            offset++;
 		    }
+            bigramCount++;
 		    index.docLengths.put( "" + docID, offset );
 		    reader.close();
 		}
@@ -128,7 +140,7 @@ public class Indexer {
 	}
     }
 
-    
+
     /* ----------------------------------------------- */
 
 
@@ -137,12 +149,12 @@ public class Indexer {
      */
     public String extractPDFContents( File f ) throws IOException {
 	FileInputStream fi = new FileInputStream( f );
-	PDFParser parser = new PDFParser( fi );   
-	parser.parse();   
+	PDFParser parser = new PDFParser( fi );
+	parser.parse();
 	fi.close();
-	COSDocument cd = parser.getDocument();   
-	PDFTextStripper stripper = new PDFTextStripper();   
-	String result = stripper.getText( new PDDocument( cd ));  
+	COSDocument cd = parser.getDocument();
+	PDFTextStripper stripper = new PDFTextStripper();
+	String result = stripper.getText( new PDDocument( cd ));
 	cd.close();
 	return result;
     }
@@ -159,6 +171,13 @@ public class Indexer {
 			transferIndexToDisk();
 		}
 		index.insert( token, docID, offset );
+    }
+
+    /**
+     *  Indexes one bigram.
+     */
+    public void insertIntoBigramIndex( int docID, String token, int offset) {
+		index.insertBigram(token, docID, offset);
     }
 
     /**
@@ -179,8 +198,8 @@ public class Indexer {
     public boolean needIndexing() {
     	File index = new File(Constants.indexFileName());
     	File invertedIndex = new File(Constants.postingsFileName());
-		if (index.exists() && !index.isDirectory() && invertedIndex.exists() && !invertedIndex.isDirectory()) { 
-    		return false;	
+		if (index.exists() && !index.isDirectory() && invertedIndex.exists() && !invertedIndex.isDirectory()) {
+    		return false;
 		} else {
 			return true;
 		}
@@ -202,7 +221,7 @@ public class Indexer {
     }
 
     public void calculateScores() {
-    	index.calculateScores();	
+    	index.calculateScores();
+        index.calculateBigramScores();
     }
 }
-	

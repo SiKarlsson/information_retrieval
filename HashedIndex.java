@@ -25,6 +25,7 @@ public class HashedIndex implements Index {
 
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+    private HashMap<String,PostingsList> bigramIndex = new HashMap<String,PostingsList>();
     private HashMap<String, String> docIDs = new HashMap<String,String>();
     private HashMap<String, Integer> articleTitles = new HashMap<String, Integer>();
     private HashMap<Integer, Double> pageRanks = new HashMap<Integer, Double>();
@@ -32,6 +33,7 @@ public class HashedIndex implements Index {
     private Queue<String> pathCache = new LinkedList<String>();
     private int numDocs = 0;
     private final static int IDF_THRESHOLD = 1;
+    private final static boolean ELIMINATE_INDEX = false;
 
 
     /**
@@ -47,12 +49,28 @@ public class HashedIndex implements Index {
         index.put(token, pl);
     }
 
+    public void insertBigram(String token, int docID, int offset) {
+        PostingsList pl = bigramIndex.get(token);
+        if (pl == null) {
+            pl = new PostingsList();
+        }
+        PostingsEntry pe = new PostingsEntry(docID);
+        pl.insert(pe, offset);
+        bigramIndex.put(token, pl);
+    }
 
     /**
      *  Returns all the words in the index.
      */
     public Iterator<String> getDictionary() {
 	   return index.keySet().iterator();
+    }
+
+    /**
+     *  Returns all the words in the bigram index.
+     */
+    public Iterator<String> getBigramDictionary() {
+	   return bigramIndex.keySet().iterator();
     }
 
 
@@ -84,8 +102,14 @@ public class HashedIndex implements Index {
         switch (queryType) {
             case INTERSECTION_QUERY:  return intersect(query);
             case PHRASE_QUERY:        return phrase(query);
-            case RANKED_QUERY:        return ranked(query, rankingType);
-            default:                  return null;
+            case RANKED_QUERY:
+                if (structureType == UNIGRAM) {
+                    return ranked(query, rankingType, true);
+                } else {
+                    return ranked(createBigramQuery(query), rankingType, false);
+                }
+            default:
+                return null;
         }
     }
 
@@ -211,13 +235,18 @@ public class HashedIndex implements Index {
         return offsets;
     }
 
-    public PostingsList ranked(Query query, int rankingType) {
+    public PostingsList ranked(Query query, int rankingType, boolean unigram) {
         System.out.println("NOW DOING SEARCH...");
         long startTime = System.nanoTime();
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
-            PostingsList pl = getPostings(query.terms.get(i));
-            if (eliminateIndex(pl)) {
+            PostingsList pl;
+            if (unigram) {
+                pl = getPostings(query.terms.get(i));
+            } else {
+                pl = bigramIndex.get(query.terms.get(i));
+            }
+            if (ELIMINATE_INDEX && eliminateIndex(pl)) {
                 continue;
             }
             if (pl != null) {
@@ -380,5 +409,31 @@ public class HashedIndex implements Index {
                 pe.calculateScore(numDocs, documentFreq);
             }
         }
+    }
+
+    public void calculateBigramScores() {
+        Iterator it = getBigramDictionary();
+        while (it.hasNext()) {
+            String term = (String)it.next();
+            PostingsList pl = bigramIndex.get(term);
+            int documentFreq = pl.size();
+            for (int i = 0; i < pl.size(); i++) {
+                PostingsEntry pe = pl.get(i);
+                pe.calculateScore(1000, documentFreq);
+            }
+        }
+    }
+
+    private Query createBigramQuery(Query query) {
+        Query q = new Query();
+        String prevTerm = "";
+        for (int i = 0; i < query.terms.size(); i++) {
+            String term = query.terms.get(i);
+            String newTerm = prevTerm + "," + term;
+            q.terms.add(newTerm);
+            q.weights.put(newTerm, new Double(1));
+            prevTerm = term;
+        }
+        return q;
     }
 }

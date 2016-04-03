@@ -252,7 +252,7 @@ public class HashedIndex implements Index {
     }
 
     public PostingsList ranked(Query query, int rankingType, boolean unigram) {
-        System.out.println("NOW DOING SEARCH...");
+        System.out.println("Searching...");
         long startTime = System.nanoTime();
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
@@ -301,15 +301,15 @@ public class HashedIndex implements Index {
         answer.sort();
 
         long estimatedTime = System.nanoTime() - startTime;
-        System.out.println("DONE WITH SEARCH after: " + estimatedTime/(double)1000000);
+        System.out.println("Done with search after: " + estimatedTime/(double)1000000 + " ms.");
         return answer;
     }
 
     private PostingsList lengthNormalize(PostingsList answer, int queryLength) {
         for (int i = 0; i < answer.size(); i++) {
             PostingsEntry pe = answer.get(i);
-            pe.score = pe.score/((Math.log(docLengths.get("" + pe.docID)) + 1) * queryLength);
-            //pe.score = pe.score/(docLengths.get("" + pe.docID) * queryLength);
+            //pe.score = pe.score/((Math.log(docLengths.get("" + pe.docID)) + 1) * queryLength);
+            pe.score = pe.score/(docLengths.get("" + pe.docID) * queryLength);
         }
         return answer;
     }
@@ -488,5 +488,9 @@ public class HashedIndex implements Index {
         System.out.println(pl.size());
 
         return pl;
+    }
+
+    public int getNumDocs() {
+        return numDocs;
     }
 }

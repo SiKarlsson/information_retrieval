@@ -50,5 +50,6 @@ public interface Index {
     public void setPageRanks(HashMap<Integer, Double> map);
     public void insertBigram(String token, int docID, int offset);
     public void calculateBigramScores();
+    public int getNumDocs();
 
 }

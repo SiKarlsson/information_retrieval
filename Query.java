@@ -86,25 +86,15 @@ public class Query {
         /* Go through every relevant document */
         for (int i = 0; i < docR.size(); i++) {
             int docID = docR.get(i).docID;
-            System.out.println("Reading doc " + docID + "....");
             String docName = indexer.index.getFilePath(docID + "");
             /* Get all terms from current relevant document */
-            HashSet<String> terms = getTermsFromDoc(docName);
-            System.out.println("Done reading doc " + docID);
-            System.out.println("Going through terms for doc " + docID + "...");
+            HashMap<String, Integer> terms = getTermsFromDoc(docName);
+            int numDocs = indexer.index.getNumDocs();
             /* Iterate through every term */
-            Iterator<String> it = terms.iterator();
-            while (it.hasNext()) {
-                double score = 0.0;
-                String term = it.next();
-                PostingsList pl = indexer.index.getPostings(term);
-                /* Find the term score for current document */
-                for (int j = 0; j < pl.size(); j++) {
-                    if (pl.get(j).docID == docID) {
-                        score = pl.get(j).score/indexer.index.docLengths.get(docID + "");
-                        break;
-                    }
-                }
+            for (String term : terms.keySet()) {
+                int docFreq = indexer.index.getPostings(term).size();
+                double score = terms.get(term)*Math.log((double)numDocs/(double)docFreq);
+                score = score/indexer.index.docLengths.get(docID + "");
                 /* Add term of revelant doc to new query and weigh with beta */
                 if (newQuery.get(term) == null) {
                     newQuery.put(term, score*beta);
@@ -112,7 +102,6 @@ public class Query {
                     newQuery.put(term, newQuery.get(term) + score*beta);
                 }
             }
-            System.out.println("done!");
         }
         /* Create new query from the query HashMap */
         terms = new LinkedList<String>();
@@ -123,8 +112,8 @@ public class Query {
         }
     }
 
-    public HashSet<String> getTermsFromDoc(String docName) {
-        HashSet<String> termsInFile = new HashSet<String>();
+    public HashMap<String, Integer> getTermsFromDoc(String docName) {
+        HashMap<String, Integer> termsInFile = new HashMap<String, Integer>();
         Indexer indexer = new Indexer();
         File f = new File(docName);
         if ( f.canRead() ) {
@@ -150,7 +139,11 @@ public class Query {
                 SimpleTokenizer tok = new SimpleTokenizer( reader );
                 while ( tok.hasMoreTokens() ) {
                     String token = tok.nextToken();
-                    termsInFile.add(token);
+                    if (termsInFile.get(token) == null) {
+                        termsInFile.put(token, 1);
+                    } else {
+                        termsInFile.put(token, termsInFile.get(token) + 1);
+                    }
                 }
                 reader.close();
             }

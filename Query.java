@@ -61,8 +61,8 @@ public class Query {
     public void relevanceFeedback( PostingsList results, boolean[] docIsRelevant, Indexer indexer ) {
     	// results contain the ranked list from the current search
     	// docIsRelevant contains the users feedback on which of the 10 first hits are relevant
-        double alpha = 0.9;
-        double beta = 0.1;
+        double alpha = 1;
+        double beta = 0.75;
         /* Add all relevant documents to docR */
         ArrayList<PostingsEntry> docR = new ArrayList<PostingsEntry>();
         for (int i = 0; i < docIsRelevant.length; i++) {

@@ -105,8 +105,24 @@ public class HashedIndex implements Index {
             case RANKED_QUERY:
                 if (structureType == UNIGRAM) {
                     return ranked(query, rankingType, true);
-                } else {
+                } else if (structureType == BIGRAM) {
                     return ranked(createBigramQuery(query), rankingType, false);
+                } else {
+                    PostingsList answer;
+                    if (query.terms.size() < 2) {
+                        answer = ranked(query, rankingType, true);
+                    } else {
+                        answer = ranked(createBigramQuery(query), rankingType, false);
+                    }
+                    if (query.terms.size() >= 2 && answer.size() < 10) {
+                        PostingsList answer2 = ranked(query, rankingType, true);
+                        if (answer.size() > answer2.size()) {
+                            answer = mergeAnswers(answer, answer2);
+                        } else {
+                            answer = mergeAnswers(answer2, answer);
+                        }
+                    }
+                    return answer;
                 }
             default:
                 return null;
@@ -435,5 +451,42 @@ public class HashedIndex implements Index {
             prevTerm = term;
         }
         return q;
+    }
+
+    private PostingsList mergeAnswers(PostingsList answer1, PostingsList answer2) {
+        HashMap<Integer, Double> answerMap1 = new HashMap<Integer, Double>();
+        HashMap<Integer, Double> answerMap2 = new HashMap<Integer, Double>();
+        for (int i = 0; i < answer1.size(); i++) {
+            PostingsEntry pe = answer1.get(i);
+            answerMap1.put(pe.docID, pe.score);
+        }
+        for (int i = 0; i < answer2.size(); i++) {
+            PostingsEntry pe = answer2.get(i);
+            answerMap2.put(pe.docID, pe.score);
+        }
+        HashMap<Integer, Double> answer = new HashMap<Integer, Double>();
+        for (Integer key : answerMap1.keySet()) {
+            Double score = answerMap2.get(key);
+            if (score == null) {
+                answer.put(key, answerMap1.get(key));
+            } else {
+                answer.put(key, answerMap1.get(key) + score);
+                answerMap2.remove(key);
+            }
+        }
+        for (Integer key : answerMap2.keySet()) {
+            answer.put(key, answerMap2.get(key));
+        }
+        PostingsList pl = new PostingsList();
+        for (Integer key : answer.keySet()) {
+            PostingsEntry pe = new PostingsEntry(key);
+            pe.score = answer.get(key);
+            pl.insert(pe);
+        }
+        pl.sort();
+
+        System.out.println(pl.size());
+
+        return pl;
     }
 }

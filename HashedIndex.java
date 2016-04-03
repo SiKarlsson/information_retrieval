@@ -142,7 +142,7 @@ public class HashedIndex implements Index {
             for (int i = 1; i < query.terms.size(); i++) {
                 String nextTerm = query.terms.get(i);
                 PostingsList pl = getPostings(nextTerm);
-                if (eliminateIndex(pl)) {
+                if (ELIMINATE_INDEX && eliminateIndex(pl)) {
                     continue;
                 }
                 intersection = intersect(intersection, pl);

@@ -32,6 +32,7 @@ public class HashedIndex implements Index {
     private Queue<String> cache = new LinkedList<String>();
     private Queue<String> pathCache = new LinkedList<String>();
     private int numDocs = 0;
+    private int numBigrams = 0;
     private final static int IDF_THRESHOLD = 1;
     private final static boolean ELIMINATE_INDEX = false;
 
@@ -435,7 +436,7 @@ public class HashedIndex implements Index {
             int documentFreq = pl.size();
             for (int i = 0; i < pl.size(); i++) {
                 PostingsEntry pe = pl.get(i);
-                pe.calculateScore(1000, documentFreq);
+                pe.calculateScore(numBigrams, documentFreq);
             }
         }
     }
@@ -492,5 +493,9 @@ public class HashedIndex implements Index {
 
     public int getNumDocs() {
         return numDocs;
+    }
+
+    public void setNumBigramDocs(int bigramCount) {
+        numBigrams = bigramCount;
     }
 }

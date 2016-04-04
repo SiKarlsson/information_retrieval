@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Random;
 import org.apache.pdfbox.cos.COSDocument;
 import org.apache.pdfbox.pdfparser.*;
 import org.apache.pdfbox.util.PDFTextStripper;
@@ -43,7 +44,8 @@ public class Indexer {
     private int memoryLimit = 70371;
 
     /** The maximum number of bigrams to store in memory. */
-    private int numBigrams = 1000;
+    private int numBigrams = 1700;
+    private int numDocsApprox = 17000;
     private int bigramCount = 0;
 
 
@@ -120,16 +122,21 @@ public class Indexer {
 		    SimpleTokenizer tok = new SimpleTokenizer( reader );
 		    int offset = 0;
             String prevToken = "";
+            boolean indexDoc = false;
+            Random r = new Random();
+            if (r.nextDouble() <= (double)numBigrams/(double)numDocsApprox) {
+                indexDoc = true;
+                bigramCount++;
+            }
 		    while ( tok.hasMoreTokens() ) {
 			String token = tok.nextToken();
 			insertIntoIndex( docID, token, offset );
-            if (bigramCount < numBigrams) {
+            if (indexDoc) {
                 insertIntoBigramIndex(docID, prevToken + "," + token, offset);
                 prevToken = token;
             }
             offset++;
 		    }
-            bigramCount++;
 		    index.docLengths.put( "" + docID, offset );
 		    reader.close();
 		}
@@ -218,6 +225,7 @@ public class Indexer {
     	}
         index.setArticleTitles(ir.readArticleTitles());
         index.setPageRanks(ir.readPageRanks());
+        index.setNumBigramDocs(bigramCount);
     }
 
     public void calculateScores() {

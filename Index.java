@@ -51,5 +51,6 @@ public interface Index {
     public void insertBigram(String token, int docID, int offset);
     public void calculateBigramScores();
     public int getNumDocs();
+    public void setNumBigramDocs(int bigramCount);
 
 }

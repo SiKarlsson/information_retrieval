@@ -1,11 +1,11 @@
-/*  
+/*
  *   This file is part of the computer assignment for the
  *   Information Retrieval course at KTH.
- * 
+ *
  *   First version:  Johan Boye, 2010
  *   Second version: Johan Boye, 2012
  *   Additions: Hedvig Kjellström, 2012-14
- */  
+ */
 
 
 package ir;
@@ -25,12 +25,16 @@ public class HashedIndex implements Index {
 
     /** The index as a hashtable. */
     private HashMap<String,PostingsList> index = new HashMap<String,PostingsList>();
+    private HashMap<String,PostingsList> bigramIndex = new HashMap<String,PostingsList>();
     private HashMap<String, String> docIDs = new HashMap<String,String>();
     private HashMap<String, Integer> articleTitles = new HashMap<String, Integer>();
     private HashMap<Integer, Double> pageRanks = new HashMap<Integer, Double>();
     private Queue<String> cache = new LinkedList<String>();
     private Queue<String> pathCache = new LinkedList<String>();
     private int numDocs = 0;
+    private int numBigrams = 0;
+    private final static int IDF_THRESHOLD = 1;
+    private final static boolean ELIMINATE_INDEX = false;
 
 
     /**
@@ -46,12 +50,28 @@ public class HashedIndex implements Index {
         index.put(token, pl);
     }
 
+    public void insertBigram(String token, int docID, int offset) {
+        PostingsList pl = bigramIndex.get(token);
+        if (pl == null) {
+            pl = new PostingsList();
+        }
+        PostingsEntry pe = new PostingsEntry(docID);
+        pl.insert(pe, offset);
+        bigramIndex.put(token, pl);
+    }
 
     /**
      *  Returns all the words in the index.
      */
     public Iterator<String> getDictionary() {
 	   return index.keySet().iterator();
+    }
+
+    /**
+     *  Returns all the words in the bigram index.
+     */
+    public Iterator<String> getBigramDictionary() {
+	   return bigramIndex.keySet().iterator();
     }
 
 
@@ -83,8 +103,30 @@ public class HashedIndex implements Index {
         switch (queryType) {
             case INTERSECTION_QUERY:  return intersect(query);
             case PHRASE_QUERY:        return phrase(query);
-            case RANKED_QUERY:        return ranked(query, rankingType);
-            default:                  return null;
+            case RANKED_QUERY:
+                if (structureType == UNIGRAM) {
+                    return ranked(query, rankingType, true);
+                } else if (structureType == BIGRAM) {
+                    return ranked(createBigramQuery(query), rankingType, false);
+                } else {
+                    PostingsList answer;
+                    if (query.terms.size() < 2) {
+                        answer = ranked(query, rankingType, true);
+                    } else {
+                        answer = ranked(createBigramQuery(query), rankingType, false);
+                    }
+                    if (query.terms.size() >= 2 && answer.size() < 10) {
+                        PostingsList answer2 = ranked(query, rankingType, true);
+                        if (answer.size() > answer2.size()) {
+                            answer = mergeAnswers(answer, answer2);
+                        } else {
+                            answer = mergeAnswers(answer2, answer);
+                        }
+                    }
+                    return answer;
+                }
+            default:
+                return null;
         }
     }
 
@@ -93,20 +135,28 @@ public class HashedIndex implements Index {
      */
     public PostingsList intersect(Query query) {
         if (query.terms.size() > 0) {
+            System.out.println("NOW DOING SEARCH...");
+            long startTime = System.nanoTime();
             String term = query.terms.getFirst();
             PostingsList intersection = getPostings(term);
-            
+
             for (int i = 1; i < query.terms.size(); i++) {
                 String nextTerm = query.terms.get(i);
-                intersection = intersect(intersection, getPostings(nextTerm));
+                PostingsList pl = getPostings(nextTerm);
+                if (ELIMINATE_INDEX && eliminateIndex(pl)) {
+                    continue;
+                }
+                intersection = intersect(intersection, pl);
                 if (intersection == null) {
                     return null;
                 }
             }
-            return intersection;    
-        } else { 
+            long estimatedTime = System.nanoTime() - startTime;
+            System.out.println("DONE WITH SEARCH after: " + estimatedTime/(double)1000000);
+            return intersection;
+        } else {
             return null;
-        }   
+        }
     }
 
     /**
@@ -149,9 +199,9 @@ public class HashedIndex implements Index {
                 }
             }
             return phrase;
-        } else { 
+        } else {
             return null;
-        }   
+        }
     }
 
     /**
@@ -202,18 +252,28 @@ public class HashedIndex implements Index {
         return offsets;
     }
 
-    public PostingsList ranked(Query query, int rankingType) {
+    public PostingsList ranked(Query query, int rankingType, boolean unigram) {
+        System.out.println("Searching...");
+        long startTime = System.nanoTime();
         HashMap<Integer, PostingsEntry> docs = new HashMap<Integer, PostingsEntry>();
         for (int i = 0; i < query.terms.size(); i++) {
-            PostingsList pl = getPostings(query.terms.get(i));
-            if (pl != null) { 
+            PostingsList pl;
+            if (unigram) {
+                pl = getPostings(query.terms.get(i));
+            } else {
+                pl = bigramIndex.get(query.terms.get(i));
+            }
+            if (ELIMINATE_INDEX && eliminateIndex(pl)) {
+                continue;
+            }
+            if (pl != null) {
                 for (int j = 0; j < pl.size(); j++) {
                     PostingsEntry pe = pl.get(j);
                     PostingsEntry res = docs.get(pl.get(j).docID);
                     if (res == null) {
                         res = new PostingsEntry(pe.docID);
                     }
-                    res.score += pe.score;
+                    res.score += pe.score*query.weights.get(query.terms.get(i));
                     docs.put(res.docID, res);
                 }
             }
@@ -223,7 +283,7 @@ public class HashedIndex implements Index {
         PostingsList answer = new PostingsList();
         answer.setPostingsList(postingsList);
 
-        answer = lengthNormalize(answer);
+        answer = lengthNormalize(answer, query.terms.size());
 
         if (rankingType == Index.PAGERANK) {
             for (int i = 0; i < answer.size(); i++) {
@@ -241,15 +301,18 @@ public class HashedIndex implements Index {
 
         answer.sort();
 
+        long estimatedTime = System.nanoTime() - startTime;
+        System.out.println("Done with search after: " + estimatedTime/(double)1000000 + " ms.");
         return answer;
     }
 
-    private PostingsList lengthNormalize(PostingsList answer) {
+    private PostingsList lengthNormalize(PostingsList answer, int queryLength) {
         for (int i = 0; i < answer.size(); i++) {
             PostingsEntry pe = answer.get(i);
-            pe.score = pe.score/Math.log(docLengths.get("" + pe.docID));
+            //pe.score = pe.score/((Math.log(docLengths.get("" + pe.docID)) + 1) * queryLength);
+            pe.score = pe.score/(docLengths.get("" + pe.docID) * queryLength);
         }
-        return answer;        
+        return answer;
     }
 
     public double pageRank(int docID) {
@@ -275,8 +338,8 @@ public class HashedIndex implements Index {
     }
 
     public double pageRankFunction(double tfIdfScore, int docID) {
-        double a = 1.0;
-        double b = 500.0;
+        double a = 1;
+        double b = 0.75;
         return a*tfIdfScore + b*pageRank(docID);
     }
 
@@ -348,6 +411,10 @@ public class HashedIndex implements Index {
         return tf*idf;
     }
 
+    private boolean eliminateIndex(PostingsList pl) {
+        return Math.log(numDocs/pl.size()) < IDF_THRESHOLD;
+    }
+
     public void calculateScores() {
         Iterator it = getDictionary();
         while (it.hasNext()) {
@@ -359,5 +426,76 @@ public class HashedIndex implements Index {
                 pe.calculateScore(numDocs, documentFreq);
             }
         }
+    }
+
+    public void calculateBigramScores() {
+        Iterator it = getBigramDictionary();
+        while (it.hasNext()) {
+            String term = (String)it.next();
+            PostingsList pl = bigramIndex.get(term);
+            int documentFreq = pl.size();
+            for (int i = 0; i < pl.size(); i++) {
+                PostingsEntry pe = pl.get(i);
+                pe.calculateScore(numBigrams, documentFreq);
+            }
+        }
+    }
+
+    private Query createBigramQuery(Query query) {
+        Query q = new Query();
+        String prevTerm = "";
+        for (int i = 0; i < query.terms.size(); i++) {
+            String term = query.terms.get(i);
+            String newTerm = prevTerm + "," + term;
+            q.terms.add(newTerm);
+            q.weights.put(newTerm, new Double(1));
+            prevTerm = term;
+        }
+        return q;
+    }
+
+    private PostingsList mergeAnswers(PostingsList answer1, PostingsList answer2) {
+        HashMap<Integer, Double> answerMap1 = new HashMap<Integer, Double>();
+        HashMap<Integer, Double> answerMap2 = new HashMap<Integer, Double>();
+        for (int i = 0; i < answer1.size(); i++) {
+            PostingsEntry pe = answer1.get(i);
+            answerMap1.put(pe.docID, pe.score);
+        }
+        for (int i = 0; i < answer2.size(); i++) {
+            PostingsEntry pe = answer2.get(i);
+            answerMap2.put(pe.docID, pe.score);
+        }
+        HashMap<Integer, Double> answer = new HashMap<Integer, Double>();
+        for (Integer key : answerMap1.keySet()) {
+            Double score = answerMap2.get(key);
+            if (score == null) {
+                answer.put(key, answerMap1.get(key));
+            } else {
+                answer.put(key, answerMap1.get(key) + score);
+                answerMap2.remove(key);
+            }
+        }
+        for (Integer key : answerMap2.keySet()) {
+            answer.put(key, answerMap2.get(key));
+        }
+        PostingsList pl = new PostingsList();
+        for (Integer key : answer.keySet()) {
+            PostingsEntry pe = new PostingsEntry(key);
+            pe.score = answer.get(key);
+            pl.insert(pe);
+        }
+        pl.sort();
+
+        System.out.println(pl.size());
+
+        return pl;
+    }
+
+    public int getNumDocs() {
+        return numDocs;
+    }
+
+    public void setNumBigramDocs(int bigramCount) {
+        numBigrams = bigramCount;
     }
 }
